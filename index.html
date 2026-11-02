@@ -93,7 +93,7 @@
 
 <footer>
   <span id="status">&nbsp;</span>
-  <span>Officieel schema: <a href="https://mijnknltb.toernooi.nl/tournament/2b60ce5d-03fb-4c98-9ced-a5359036913e" target="_blank" rel="noopener">MijnKNLTB</a></span>
+  <span>Een website van TeVeR Rijkevoort</span>
 </footer>
 
 <script src="config.js"></script>
@@ -216,7 +216,7 @@ async function laad() {
     toonDagen(); toonOnderdelen(); toon();
     const tijd = new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
     status.className = "";
-    status.textContent = live ? `Live bijgewerkt om ${tijd}` : "Programma volgens KNLTB · uitslagen volgen tijdens het toernooi";
+    status.textContent = live ? `Bijgewerkt om ${tijd}` : "";
   } catch (e) {
     status.className = "fout";
     status.textContent = "Bijwerken mislukt, probeer het later opnieuw.";

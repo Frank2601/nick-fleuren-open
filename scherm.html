@@ -173,7 +173,7 @@ async function laad() {
     let wedstrijden, bron;
     try {
       ({ wedstrijden } = await laadWedstrijden(CSV_URL));
-      bron = CSV_URL ? "Bijgewerkt " : "Programma KNLTB · ";
+      bron = "TeVeR Rijkevoort · bijgewerkt ";
     } catch (e) {
       if (CSV_URL) throw e;   // zonder sheet-link (bijv. lokaal geopend) vallen we terug op de demo
       wedstrijden = parseCSV(DEMO).map(normaliseer);
