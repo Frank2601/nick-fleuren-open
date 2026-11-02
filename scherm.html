@@ -172,12 +172,13 @@ async function laad() {
   try {
     let wedstrijden, bron;
     try {
-      ({ wedstrijden } = await laadWedstrijden(CSV_URL));
-      bron = "TeVeR Rijkevoort · bijgewerkt ";
+      let bijgewerkt;
+      ({ wedstrijden, bijgewerkt } = await laadWedstrijden(CSV_URL));
+      bron = bijgewerkt ? `TeVeR Rijkevoort · uitslagen bijgewerkt ${bijgewerkt}` : "TeVeR Rijkevoort";
     } catch (e) {
       if (CSV_URL) throw e;   // zonder sheet-link (bijv. lokaal geopend) vallen we terug op de demo
       wedstrijden = parseCSV(DEMO).map(normaliseer);
-      bron = "DEMO-gegevens · ";
+      bron = "DEMO-gegevens";
     }
     // Met een Datum-kolom alleen de wedstrijden van vandaag (of ?datum=dd-mm-jjjj)
     if (wedstrijden.some(w => w.datum)) {
@@ -191,7 +192,7 @@ async function laad() {
     if (zelfde >= 0) index = zelfde;
     fout = null;
     laatsteOk = new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
-    document.getElementById("bijgewerkt").textContent = bron + laatsteOk;
+    document.getElementById("bijgewerkt").textContent = bron;
   } catch (e) {
     fout = e;
     document.getElementById("bijgewerkt").textContent = `Laden mislukt – laatste stand ${laatsteOk || "–"}`;

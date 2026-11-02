@@ -104,7 +104,7 @@ const VERVERS_SECONDEN = 60;
 const DAGNAMEN = ["zo", "ma", "di", "wo", "do", "vr", "za"];
 const MAANDEN = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 
-const staat = { alle: [], dag: null, onderdeel: "", zoek: "", live: false };
+const staat = { alle: [], dag: null, onderdeel: "", zoek: "" };
 
 function dagLabel(datum) {
   const [d, m, j] = datum.split("-").map(Number);
@@ -211,12 +211,11 @@ function toon() {
 async function laad() {
   const status = document.getElementById("status");
   try {
-    const { wedstrijden, live } = await laadWedstrijden(CFG.CSV_URL);
-    staat.alle = wedstrijden; staat.live = live;
+    const { wedstrijden, bijgewerkt } = await laadWedstrijden(CFG.CSV_URL);
+    staat.alle = wedstrijden;
     toonDagen(); toonOnderdelen(); toon();
-    const tijd = new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
     status.className = "";
-    status.textContent = live ? `Bijgewerkt om ${tijd}` : "";
+    status.textContent = bijgewerkt ? `Laatst bijgewerkt: ${bijgewerkt}` : "";
   } catch (e) {
     status.className = "fout";
     status.textContent = "Bijwerken mislukt, probeer het later opnieuw.";

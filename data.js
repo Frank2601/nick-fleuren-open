@@ -47,11 +47,14 @@ const datumSleutel = d => d.split("-").reverse().join("");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 // Haalt de wedstrijden op: eerst de Google Sheet (config.js), anders wedstrijden.csv.
-// Geeft { wedstrijden, live } terug; live = true als het uit de sheet komt.
+// Geeft { wedstrijden, bijgewerkt } terug; bijgewerkt = "HH:MM" van de laatste wijziging (indien bekend).
 async function laadWedstrijden(csvUrl) {
   const url = csvUrl || "wedstrijden.csv";
   const r = await fetch(url + (url.includes("?") ? "&" : "?") + "_=" + Date.now(), { cache: "no-store" });
   if (!r.ok) throw new Error("HTTP " + r.status);
   const wedstrijden = parseCSV(await r.text()).map(normaliseer).filter(w => w.speler1 || w.speler2);
-  return { wedstrijden, live: !!csvUrl };
+  const lm = r.headers.get("last-modified");
+  const bijgewerkt = lm && !isNaN(new Date(lm))
+    ? new Date(lm).toLocaleString("nl-NL", { weekday: "short", hour: "2-digit", minute: "2-digit" }) : "";
+  return { wedstrijden, bijgewerkt };
 }
