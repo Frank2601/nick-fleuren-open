@@ -1,0 +1,7 @@
+# Alleen de website zelf wordt gepubliceerd
+node_modules/
+.chrome-profiel/
+knltb/
+package.json
+package-lock.json
+ophalen.mjs
