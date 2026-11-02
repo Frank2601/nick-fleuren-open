@@ -57,6 +57,12 @@
   footer .voortgang { flex: 1; height: .6vh; background: var(--line); border-radius: 99px; overflow: hidden; }
   footer .voortgang div { height: 100%; width: 0; background: var(--ball-light); }
 
+  .vol-hint { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(16,22,29,.55); cursor: pointer; z-index: 10; }
+  .vol-hint span { background: var(--ball); color: var(--chalk); font-size: 3.4vh; font-weight: 600;
+    padding: 2vh 3vw; border-radius: 1vh; border: .3vh solid var(--ball-light); }
+  .vol-hint[hidden] { display: none; }
+
   .fade { animation: fade .6s ease; }
   @keyframes fade { from { opacity: 0; transform: translateY(1vh); } }
 </style>
@@ -76,6 +82,7 @@
   <div class="voortgang"><div id="balk"></div></div>
   <span id="teller"></span>
 </footer>
+<div class="vol-hint" id="volHint" hidden><span>Klik om schermvullend te tonen</span></div>
 
 <script src="config.js"></script>
 <script src="data.js"></script>
@@ -215,6 +222,17 @@ function klok() {
     if (e.key === "ArrowLeft") { index = (index - 1 + paginas.length) % paginas.length; toon(); }
   });
 })();
+
+// Schermvullend: browsers staan dat alleen toe na een klik of toets van de gebruiker.
+const volHint = document.getElementById("volHint");
+const isVol = () => document.fullscreenElement || innerHeight >= screen.height - 2;   // F11 of kiosk telt ook
+const werkHintBij = () => { volHint.hidden = !!(isVol() || !document.documentElement.requestFullscreen); };
+const maakVol = () => { if (!isVol()) document.documentElement.requestFullscreen?.().catch(() => {}); };
+addEventListener("click", maakVol);
+addEventListener("keydown", maakVol);
+addEventListener("resize", werkHintBij);
+document.addEventListener("fullscreenchange", werkHintBij);
+werkHintBij();
 </script>
 </body>
 </html>
