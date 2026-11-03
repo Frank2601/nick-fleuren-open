@@ -224,10 +224,17 @@ function klok() {
 })();
 
 // Schermvullend: browsers staan dat alleen toe na een klik of toets van de gebruiker.
+// Ingebouwde browsers (bijv. Optoma) kunnen het vaak niet; de melding mag dan nooit blijven staan:
+// hij verdwijnt na de eerste klik of na 10 seconden, en met ?knop=nee verschijnt hij helemaal niet.
 const volHint = document.getElementById("volHint");
+let hintWeg = params.get("knop") === "nee";
 const isVol = () => document.fullscreenElement || innerHeight >= screen.height - 2;   // F11 of kiosk telt ook
-const werkHintBij = () => { volHint.hidden = !!(isVol() || !document.documentElement.requestFullscreen); };
-const maakVol = () => { if (!isVol()) document.documentElement.requestFullscreen?.().catch(() => {}); };
+const werkHintBij = () => { volHint.hidden = !!(hintWeg || isVol() || !document.documentElement.requestFullscreen); };
+const maakVol = () => {
+  hintWeg = true; werkHintBij();
+  if (!isVol()) document.documentElement.requestFullscreen?.().catch(() => {});
+};
+setTimeout(() => { hintWeg = true; werkHintBij(); }, 10000);
 addEventListener("click", maakVol);
 addEventListener("keydown", maakVol);
 addEventListener("resize", werkHintBij);
