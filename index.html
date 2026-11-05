@@ -30,6 +30,7 @@
   .dagen button { flex: 0 0 auto; border: 1px solid var(--lijn); background: #fff; color: var(--tekst);
     border-radius: 99px; padding: 6px 12px; font: inherit; font-size: .9rem; cursor: pointer; white-space: nowrap; }
   .dagen button.actief { background: var(--blauw); border-color: var(--blauw); color: #fff; font-weight: 600; }
+  .dagen.alle-dagen button.actief { background: #fff; border-color: var(--lijn); color: var(--tekst); font-weight: 400; }
   .dagen button .vandaag { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; margin-left: 4px; opacity: .8; }
   .filters { display: flex; gap: 8px; }
   .filters select, .filters input { font: inherit; font-size: .95rem; padding: 8px 10px; border: 1px solid var(--lijn);
@@ -169,8 +170,9 @@ function toonOnderdelen() {
 
 function toon() {
   const main = document.getElementById("main");
-  // Bij zoeken op naam: alle dagen doorzoeken, zodat je al je wedstrijden ziet
-  const zoektAlles = !!staat.zoek;
+  // Bij zoeken op naam of kiezen van een onderdeel: alle dagen tonen, zodat je de hele poule ziet
+  const zoektAlles = !!(staat.zoek || staat.onderdeel);
+  document.getElementById("dagen").classList.toggle("alle-dagen", zoektAlles);
   const lijst = filter(staat.alle.filter(w => zoektAlles || !staat.dag || w.datum === staat.dag));
   if (!lijst.length) {
     main.innerHTML = `<div class="leeg">${staat.alle.length ? "Geen wedstrijden gevonden." : "Nog geen wedstrijden."}</div>`;
@@ -182,7 +184,10 @@ function toon() {
     const perDag = new Map();
     lijst.sort((a, b) => datumSleutel(a.datum || "").localeCompare(datumSleutel(b.datum || "")) || tijdSleutel(a.tijd) - tijdSleutel(b.tijd))
       .forEach(w => { const k = w.datum || ""; if (!perDag.has(k)) perDag.set(k, []); perDag.get(k).push(w); });
-    html += `<h2>Zoekresultaat <span class="aantal">${lijst.length} wedstrijd${lijst.length === 1 ? "" : "en"}</span></h2>`;
+    const gespeeld = lijst.filter(w => w.status === "gespeeld").length;
+    html += staat.zoek
+      ? `<h2>Zoekresultaat <span class="aantal">${lijst.length} wedstrijd${lijst.length === 1 ? "" : "en"}</span></h2>`
+      : `<h2>${esc(staat.onderdeel)} <span class="aantal">${gespeeld}/${lijst.length} gespeeld</span></h2>`;
     for (const [dag, ws] of perDag) {
       html += `<h3 class="tijdblok">${dag ? dagLabel(dag) : ""}</h3>` + ws.map(w => kaartHTML(w, true)).join("");
     }
@@ -225,7 +230,9 @@ async function laad() {
 
 document.getElementById("dagen").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
-  staat.dag = b.dataset.dag; staat.zoek = ""; document.getElementById("zoek").value = "";
+  // Een dag kiezen = terug naar het dagprogramma: zoekterm en onderdeel wissen
+  staat.dag = b.dataset.dag; staat.zoek = ""; staat.onderdeel = "";
+  document.getElementById("zoek").value = ""; document.getElementById("onderdeel").value = "";
   toonDagen(); toon();
 });
 document.getElementById("onderdeel").addEventListener("change", e => { staat.onderdeel = e.target.value; toon(); });
