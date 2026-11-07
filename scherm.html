@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nick Fleuren Open – Uitslagen</title>
+<link rel="icon" href="tever-logo.png">
 <style>
   :root {
     --bg: #10161d; --panel: #1a2330; --panel-alt: #212c3a; --line: #34424f;
@@ -96,8 +97,8 @@
 </footer>
 <div class="vol-hint" id="volHint" hidden><span>Klik om schermvullend te tonen</span></div>
 
-<script src="config.js"></script>
-<script src="data.js"></script>
+<script src="config.js?v=3"></script>
+<script src="data.js?v=3"></script>
 <script>
 /* Dagoverzicht: alle wedstrijden van vandaag in één lijst (gepland, bezig en gespeeld).
    Zijn het meer wedstrijden dan er op één pagina passen, dan wisselt het scherm tussen pagina's.
@@ -206,6 +207,8 @@ function klok() {
 klok(); setInterval(klok, 10000);
 laad().then(() => toon(true));
 setInterval(laad, VERVERS_SECONDEN * 1000);
+// Elk uur de hele pagina herladen, zodat een nieuwe versie vanzelf op het scherm komt
+setTimeout(() => location.reload(), 60 * 60 * 1000);
 setInterval(() => { pagina++; toon(true); }, SEC * 1000);
 addEventListener("resize", () => toon());
 // Pijltjestoetsen om zelf te bladeren
