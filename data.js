@@ -41,6 +41,14 @@ const vandaag = () => {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
 };
 
+// "6-4 3-6 10-7" → [[6,4],[3,6],[10,7]]; null als de uitslag geen gewone setstand is (bijv. walkover)
+function sets(uitslag) {
+  const delen = (uitslag || "").trim().split(/\s+/).filter(Boolean);
+  if (!delen.length || delen.length > 3) return null;
+  const s = delen.map(d => /^(\d+)-(\d+)$/.exec(d)).filter(Boolean).map(m => [+m[1], +m[2]]);
+  return s.length === delen.length ? s : null;
+}
+
 // dd-mm-jjjj → sorteerbare sleutel jjjjmmdd
 const datumSleutel = d => d.split("-").reverse().join("");
 

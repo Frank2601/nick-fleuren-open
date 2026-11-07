@@ -52,14 +52,16 @@
   .kaart .meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: .8rem; color: var(--grijs); margin-bottom: 4px; }
   .kaart .meta b { color: var(--blauw); font-weight: 600; }
   .kaart .live { color: var(--live); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-  .kaart .regel { display: flex; align-items: center; gap: 10px; }
-  .kaart .teams { flex: 1; min-width: 0; }
-  .kaart .teams div { overflow-wrap: anywhere; }
+  /* Teams met de games per set erachter, als op een scorebord (altijd ruimte voor 3 sets) */
+  .kaart .teams { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 1.7em); column-gap: 2px; align-items: center; }
+  .kaart .teams.zonder-uitslag { grid-template-columns: minmax(0, 1fr); }
+  .kaart .teams .naam { grid-column: 1; overflow-wrap: anywhere; padding-right: 6px; }
+  .kaart .teams .set { text-align: center; font-variant-numeric: tabular-nums; color: var(--grijs); }
+  .kaart .teams .set.won { color: var(--tekst); font-weight: 700; }
+  .kaart .teams .tekst { grid-column: 2 / -1; grid-row: 1 / 3; text-align: right; font-weight: 700; white-space: nowrap; }
   .kaart .winnaar { font-weight: 700; }
   .kaart .winnaar::after { content: " ✓"; color: var(--live); }
   .kaart .verliezer { color: var(--grijs); }
-  .kaart .uitslag { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
-  .kaart.bezig .uitslag { color: var(--live); }
   mark { background: #fff1a8; color: inherit; border-radius: 2px; }
 
   .leeg { text-align: center; color: var(--grijs); padding: 40px 0; }
@@ -131,12 +133,18 @@ function kaartHTML(w, metTijd) {
     w.ronde ? `<span>${esc(w.ronde)}</span>` : "",
     w.baan ? `<span>Baan ${esc(w.baan)}</span>` : "",
   ].filter(Boolean).join("");
+  // Per team een regel: naam, daarachter de games per set (gewonnen set vet)
+  const s = sets(w.uitslag);
+  const regel = (n, naam) => `<div class="naam ${cls(n)}" style="grid-row:${n}">${markeer(naam)}</div>` +
+    (s || []).map(([a, b], i) => {
+      const eigen = n === 1 ? a : b, ander = n === 1 ? b : a;
+      return `<div class="set${eigen > ander ? " won" : ""}" style="grid-row:${n};grid-column:${i + 2}">${eigen}</div>`;
+    }).join("");
+  // Afwijkende uitslag (bijv. walkover): als tekst rechts naast de namen
+  const tekst = !s && w.uitslag ? `<div class="tekst">${esc(w.uitslag)}</div>` : "";
   return `<div class="kaart ${w.status}">
     <div class="meta">${meta}</div>
-    <div class="regel">
-      <div class="teams"><div class="${cls(1)}">${markeer(w.speler1)}</div><div class="${cls(2)}">${markeer(w.speler2)}</div></div>
-      <div class="uitslag">${esc(w.uitslag)}</div>
-    </div>
+    <div class="teams${s || tekst ? "" : " zonder-uitslag"}">${regel(1, w.speler1)}${regel(2, w.speler2)}${tekst}</div>
   </div>`;
 }
 
