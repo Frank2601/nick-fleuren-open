@@ -133,13 +133,14 @@ function teamsHTML(w) {
 }
 
 function rijHTML(w) {
-  const label = { bezig: "Bezig", gespeeld: "Gespeeld", gepland: "Gepland" }[w.status];
+  // Bij een walkover staat "Walkover" al bij de namen; dan geen statuslabel
+  const label = w.walkover ? "" : { bezig: "Bezig", gespeeld: "Gespeeld", gepland: "Gepland" }[w.status];
   return `<div class="w ${w.status}">
     <div class="tijd">${esc(w.tijd)}</div>
     <div class="baan">${w.baan ? `<b>${esc(w.baan)}</b>` : "–"}</div>
     <div class="ond"><div>${esc(w.onderdeel.replace(/ - Groep (\w+)$/, " ($1)"))}</div><div>${esc(w.ronde)}</div></div>
     ${teamsHTML(w)}
-    <div class="status"><span>${label}</span></div>
+    <div class="status">${label ? `<span>${label}</span>` : ""}</div>
   </div>`;
 }
 
