@@ -33,7 +33,16 @@ function normaliseer(w, i) {
   else status = "gepland";
   // Walkover: MijnKNLTB geeft dan wel een winnaar door, maar geen uitslag
   const walkover = status === "gespeeld" && !w.uitslag && (w.winnaar === "1" || w.winnaar === "2");
-  return { ...w, status, walkover, volgnr: i };
+  return { ...w, speler1: hernoem(w.speler1), speler2: hernoem(w.speler2), status, walkover, volgnr: i };
+}
+
+// Vervangt namen volgens TOERNOOI.NAMEN (config.js), ook binnen dubbels "A / B"
+function hernoem(spelers) {
+  const namen = (window.TOERNOOI && window.TOERNOOI.NAMEN) || {};
+  return (spelers || "").split(" / ").map(s => {
+    const m = /^(.*?)(\s*\[\d+\])?$/.exec(s.trim());
+    return (namen[m[1]] ?? m[1]) + (m[2] || "");
+  }).join(" / ");
 }
 
 // Tekst die in plaats van setstanden getoond wordt (bijv. "Walkover" of "w.o."), anders ""

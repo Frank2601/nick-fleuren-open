@@ -6,4 +6,8 @@ window.TOERNOOI = {
   CSV_URL: "",
   NAAM: "Nick Fleuren Open",
   CLUB: "TeVeR Rijkevoort",
+  // Namen die op de site anders getoond worden: "naam in MijnKNLTB": "naam op de site"
+  NAMEN: {
+    "Tom Kuijpers": "Prins Tom d'n Urste",
+  },
 };
