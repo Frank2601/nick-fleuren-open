@@ -99,8 +99,8 @@
   <span>Een website van TeVeR Rijkevoort</span>
 </footer>
 
-<script src="config.js?v=3"></script>
-<script src="data.js?v=3"></script>
+<script src="config.js?v=4"></script>
+<script src="data.js?v=4"></script>
 <script>
 const CFG = window.TOERNOOI || {};
 const VERVERS_SECONDEN = 60;
@@ -141,7 +141,7 @@ function kaartHTML(w, metTijd) {
       return `<div class="set${eigen > ander ? " won" : ""}" style="grid-row:${n};grid-column:${i + 2}">${eigen}</div>`;
     }).join("");
   // Afwijkende uitslag (bijv. walkover): als tekst rechts naast de namen
-  const tekst = !s && w.uitslag ? `<div class="tekst">${esc(w.uitslag)}</div>` : "";
+  const tekst = uitslagTekst(w) ? `<div class="tekst">${esc(uitslagTekst(w))}</div>` : "";
   return `<div class="kaart ${w.status}">
     <div class="meta">${meta}</div>
     <div class="teams${s || tekst ? "" : " zonder-uitslag"}">${regel(1, w.speler1)}${regel(2, w.speler2)}${tekst}</div>

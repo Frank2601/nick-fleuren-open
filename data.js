@@ -31,8 +31,13 @@ function normaliseer(w, i) {
   if (status.startsWith("bez") || status === "live") status = "bezig";
   else if (status.startsWith("gesp") || status.startsWith("klaar")) status = "gespeeld";
   else status = "gepland";
-  return { ...w, status, volgnr: i };
+  // Walkover: MijnKNLTB geeft dan wel een winnaar door, maar geen uitslag
+  const walkover = status === "gespeeld" && !w.uitslag && (w.winnaar === "1" || w.winnaar === "2");
+  return { ...w, status, walkover, volgnr: i };
 }
+
+// Tekst die in plaats van setstanden getoond wordt (bijv. "Walkover" of "w.o."), anders ""
+const uitslagTekst = w => w.walkover ? "Walkover" : sets(w.uitslag) ? "" : (w.uitslag || "");
 
 const tijdSleutel = t => { const m = /(\d{1,2})[:.](\d{2})/.exec(t || ""); return m ? m[1] * 60 + +m[2] : 9999; };
 
