@@ -47,7 +47,8 @@
   #bezig .kol { display: grid; grid-auto-rows: var(--brij); gap: .6vh; }
   .bk { display: grid; grid-template-columns: 3.2em 1fr; align-items: center; gap: .8vw;
     background: #1d3326; border-left: .6vh solid var(--live); border-radius: .5vh;
-    padding: 0 1vw; font-size: calc(var(--brij) * .25); line-height: 1.2; overflow: hidden; }
+    padding: 0 1vw; font-size: calc(var(--brij) * .25);
+    font-size: min(calc(var(--rij) * .3), calc(var(--brij) * .28));   /* even groot als de lijst eronder */ line-height: 1.2; overflow: hidden; }
   .bk .bnr { text-align: center; color: var(--muted); font-size: .7em; line-height: 1; }
   .bk .bnr b { display: block; font-size: 2.2em; color: var(--chalk); }
   .bk .meta { color: var(--muted); font-size: .75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -120,10 +121,10 @@
 <script>
 /* Dagoverzicht: alle wedstrijden van vandaag in één lijst (gepland, bezig en gespeeld).
    Zijn het meer wedstrijden dan er op één pagina passen, dan wisselt het scherm tussen pagina's.
-   Opties in het adres: ?datum=dd-mm-jjjj   &rijen=8 (wedstrijden per pagina)   &sec=15 (seconden per pagina) */
+   Opties in het adres: ?datum=dd-mm-jjjj   &rijen=6 (wedstrijden per pagina)   &sec=15 (seconden per pagina) */
 const params = new URLSearchParams(location.search);
 const SEC = Number(params.get("sec")) || 15;
-const PER_PAGINA = Number(params.get("rijen")) || 8;
+const PER_PAGINA = Number(params.get("rijen")) || 6;
 const VERVERS_SECONDEN = 60;
 // Lokaal geopend (dubbelklik): de gegevens van de live site gebruiken
 const CSV_URL = window.TOERNOOI?.CSV_URL ||
@@ -132,7 +133,7 @@ const CSV_URL = window.TOERNOOI?.CSV_URL ||
 let lijst = [], pagina = 0, laatsteOk = "", fout = false;
 
 const MAX_RIJ = 9.5, RUIMTE = 80;   // regelhoogte en beschikbare hoogte in vh
-const BEZIG_RIJ = 9;                 // hoogte van een bezig-blok in vh
+const BEZIG_RIJ = 10;                // hoogte van een bezig-blok in vh
 const DEMO = params.has("demo");     // ?demo: zet een paar wedstrijden als voorbeeld op "bezig"
 let aantalPaginas = 1;
 
