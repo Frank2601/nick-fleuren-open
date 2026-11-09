@@ -36,7 +36,25 @@
     grid-template-columns: 4.2em 2.6em 9em 1fr 6.2em;
     background: var(--panel); border-left: .6vh solid var(--line); border-radius: .5vh;
     padding: 0 1vw; font-size: calc(var(--rij) * .3); line-height: 1.2; overflow: hidden; }
-  .w .bezig-tekst { display: none; }   /* het statuslabel rechts toont "bezig" al */
+  .bezig-tekst { display: none; }   /* het statuslabel / de bezig-kop toont "bezig" al */
+
+  /* Bovenaan, op elke pagina: wedstrijden die nu bezig zijn. Links baan 1 en 2, rechts baan 3 en 4 */
+  #bezig { display: grid; grid-template-columns: 1fr 1fr; gap: .6vh 1.2vw; margin-bottom: 1.4vh; }
+  #bezig[hidden] { display: none; }
+  #bezig .kop { grid-column: 1 / -1; font-size: 2.2vh; font-weight: 700; color: var(--live);
+    text-transform: uppercase; letter-spacing: .12em; }
+  #bezig .kop::before { content: "● "; animation: puls 2s infinite; }
+  #bezig .kol { display: grid; grid-auto-rows: var(--brij); gap: .6vh; }
+  .bk { display: grid; grid-template-columns: 3.2em 1fr; align-items: center; gap: .8vw;
+    background: #1d3326; border-left: .6vh solid var(--live); border-radius: .5vh;
+    padding: 0 1vw; font-size: calc(var(--brij) * .25); line-height: 1.2; overflow: hidden; }
+  .bk .bnr { text-align: center; color: var(--muted); font-size: .7em; line-height: 1; }
+  .bk .bnr b { display: block; font-size: 2.2em; color: var(--chalk); }
+  .bk .meta { color: var(--muted); font-size: .75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Vrije baan: groen vlak als een tennisbaan, met een witte lijn */
+  .bk.vrij { background: #2f7a4a; border-left-color: #4caf6e; box-shadow: inset 0 0 0 .35vh rgba(255,255,255,.55); }
+  .bk.vrij .bnr, .bk.vrij .bnr b { color: #fff; }
+  .bk.vrij .rest { color: #fff; font-size: 1.1em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   .w:nth-child(even) { background: var(--panel-alt); }
   .w.bezig { border-left-color: var(--live); background: #1d3326; }
   .w.gespeeld { border-left-color: var(--ball-light); }
@@ -48,12 +66,12 @@
   .w .ond div:first-child { font-weight: 600; }
   .w .ond div + div { color: var(--muted); font-size: .85em; }
   /* Teams met de games per set erachter, als op een scorebord (altijd ruimte voor 3 sets) */
-  .w .teams { min-width: 0; display: grid; grid-template-columns: minmax(0, 28em) repeat(3, 1.8em);
+  .teams { min-width: 0; display: grid; grid-template-columns: minmax(0, 28em) repeat(3, 1.8em);
     grid-template-rows: auto auto; column-gap: .3em; justify-content: start; }
-  .w .teams .naam { grid-column: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .w .teams .set { text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
-  .w .teams .set.won { color: var(--chalk); font-weight: 700; }
-  .w .teams .tekst { grid-column: 2 / -1; grid-row: 1 / 3; align-self: center; text-align: right;
+  .teams .naam { grid-column: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .teams .set { text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .teams .set.won { color: var(--chalk); font-weight: 700; }
+  .teams .tekst { grid-column: 2 / -1; grid-row: 1 / 3; align-self: center; text-align: right;
     white-space: nowrap; font-weight: 700; }
   .w.bezig .teams .tekst { color: var(--live); font-weight: 600; font-size: .85em; }
   .w .winnaar { font-weight: 700; }
@@ -89,7 +107,7 @@
   <div class="tellers" id="tellers"></div>
   <div class="klok" id="klok">--:--</div>
 </header>
-<main id="main"></main>
+<main><section id="bezig" hidden></section><div id="lijst"></div></main>
 <footer>
   <span id="bijgewerkt">Laden…</span>
   <div class="voortgang" id="voortgang" hidden><div id="balk"></div></div>
@@ -114,6 +132,35 @@ const CSV_URL = window.TOERNOOI?.CSV_URL ||
 let lijst = [], pagina = 0, laatsteOk = "", fout = false;
 
 const MAX_RIJ = 9.5, RUIMTE = 80;   // regelhoogte en beschikbare hoogte in vh
+const BEZIG_RIJ = 9;                 // hoogte van een bezig-blok in vh
+const DEMO = params.has("demo");     // ?demo: zet een paar wedstrijden als voorbeeld op "bezig"
+let aantalPaginas = 1;
+
+// Bezig-blok voor één baan (of een lege baan)
+function bezigHTML(w, baan) {
+  if (!w) return `<div class="bk vrij"><div class="bnr">Baan<b>${esc(baan)}</b></div><div class="rest">vrij</div></div>`;
+  const meta = [w.onderdeel.replace(/ - Groep (\w+)$/, " ($1)"), w.ronde, w.tijd].filter(Boolean).join(" · ");
+  return `<div class="bk"><div class="bnr">Baan<b>${esc(w.baan || "?")}</b></div>
+    <div style="min-width:0"><div class="meta">${esc(meta)}</div>${teamsHTML(w)}</div></div>`;
+}
+
+// Links baan 1 en 2, rechts baan 3 en 4; wedstrijden op een andere of onbekende baan
+// komen erbij in de kolom die het kortst is. Geeft de hoogte in vh terug (0 = niets bezig).
+function toonBezig(bezig) {
+  const vak = document.getElementById("bezig");
+  if (!bezig.length) { vak.hidden = true; vak.innerHTML = ""; return 0; }
+  const opBaan = b => bezig.find(w => w.baan === b);
+  const links = ["1", "2"].map(b => bezigHTML(opBaan(b), b));
+  const rechts = ["3", "4"].map(b => bezigHTML(opBaan(b), b));
+  bezig.filter(w => !["1", "2", "3", "4"].includes(w.baan))
+    .forEach(w => (links.length <= rechts.length ? links : rechts).push(bezigHTML(w)));
+  const rijen = Math.max(links.length, rechts.length);
+  const brij = rijen > 2 ? BEZIG_RIJ * 2 / rijen : BEZIG_RIJ;
+  document.documentElement.style.setProperty("--brij", brij + "vh");
+  vak.innerHTML = `<div class="kop">Nu bezig</div><div class="kol">${links.join("")}</div><div class="kol">${rechts.join("")}</div>`;
+  vak.hidden = false;
+  return 3 + rijen * (brij + .6) + 1.4;   // kop + blokken + marge
+}
 
 function teamsHTML(w) {
   const win = w.winnaar === "1" ? 1 : w.winnaar === "2" ? 2 : 0;
@@ -146,19 +193,23 @@ function rijHTML(w) {
 
 // nieuwePagina = true bij het wisselen van pagina (animatie + voortgangsbalk opnieuw starten)
 function toon(nieuwePagina = false) {
-  const main = document.getElementById("main");
+  const main = document.getElementById("lijst");
   const voortgang = document.getElementById("voortgang");
   if (!lijst.length) {
+    toonBezig([]);
     main.innerHTML = `<div class="leeg">${fout ? "Wedstrijden konden niet geladen worden." : "Vandaag geen wedstrijden."}</div>`;
     document.getElementById("pagina").textContent = "";
     voortgang.hidden = true;
     return;
   }
-  const aantalPaginas = Math.ceil(lijst.length / PER_PAGINA);
+  // Bezig staat bovenaan op elke pagina; de wisselende lijst eronder bevat de overige wedstrijden
+  const bezigHoogte = toonBezig(lijst.filter(w => w.status === "bezig"));
+  const rest = lijst.filter(w => w.status !== "bezig");
+  aantalPaginas = Math.max(1, Math.ceil(rest.length / PER_PAGINA));
   pagina %= aantalPaginas;
-  const deel = lijst.slice(pagina * PER_PAGINA, (pagina + 1) * PER_PAGINA);
+  const deel = rest.slice(pagina * PER_PAGINA, (pagina + 1) * PER_PAGINA);
   // Regelhoogte voor een volle pagina, zodat elke pagina even groot is
-  const rij = Math.min(MAX_RIJ, RUIMTE / Math.min(lijst.length, PER_PAGINA) - .5);
+  const rij = Math.min(MAX_RIJ, (RUIMTE - bezigHoogte) / Math.max(1, Math.min(rest.length, PER_PAGINA)) - .5);
 
   document.documentElement.style.setProperty("--rij", rij + "vh");
   main.innerHTML = `<div class="kolom${nieuwePagina ? " fade" : ""}">${deel.map(rijHTML).join("")}</div>`;
@@ -187,11 +238,18 @@ async function laad() {
     const dag = params.get("datum") || vandaag();
     lijst = wedstrijden.filter(w => !w.datum || w.datum === dag)
       .sort((a, b) => tijdSleutel(a.tijd) - tijdSleutel(b.tijd) || a.volgnr - b.volgnr);
+    if (DEMO) {   // voorbeeld: drie wedstrijden op baan 1, 2 en 4 laten "spelen" (liefst geplande)
+      const banen = ["1", "2", "4"];
+      const kandidaten = lijst.filter(w => w.status === "gepland").length >= 3
+        ? lijst.filter(w => w.status === "gepland") : lijst;
+      const kies = new Map(kandidaten.slice(0, 3).map((w, i) => [w, banen[i]]));
+      lijst = lijst.map(w => kies.has(w) ? { ...w, status: "bezig", uitslag: "", winnaar: "", walkover: false, baan: kies.get(w) } : w);
+    }
     document.getElementById("subtitel").textContent = `TeVeR Rijkevoort · dagoverzicht ${dag}`;
     fout = false;
     laatsteOk = bijgewerkt;
     status.className = "";
-    status.textContent = bijgewerkt ? `Uitslagen bijgewerkt ${bijgewerkt}` : "";
+    status.textContent = (DEMO ? "DEMO · " : "") + (bijgewerkt ? `Uitslagen bijgewerkt ${bijgewerkt}` : "");
   } catch (e) {
     fout = true;
     status.className = "fout";
@@ -215,7 +273,7 @@ addEventListener("resize", () => toon());
 // Pijltjestoetsen om zelf te bladeren
 addEventListener("keydown", e => {
   if (e.key === "ArrowRight") { pagina++; toon(true); }
-  if (e.key === "ArrowLeft") { pagina = Math.max(0, pagina - 1 + Math.ceil(lijst.length / PER_PAGINA)); toon(true); }
+  if (e.key === "ArrowLeft") { pagina = pagina - 1 + aantalPaginas; toon(true); }
 });
 
 // Schermvullend: browsers staan dat alleen toe na een klik of toets van de gebruiker.
