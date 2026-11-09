@@ -8,6 +8,6 @@ window.TOERNOOI = {
   CLUB: "TeVeR Rijkevoort",
   // Namen die op de site anders getoond worden: "naam in MijnKNLTB": "naam op de site"
   NAMEN: {
-    "Tom Kuijpers": "Prins Tom d'n Urste",
+    "Tom Kuijpers": "Prins Tom d'n Urste \u{1F389}",   // \u{1F389} = 🎉
   },
 };
