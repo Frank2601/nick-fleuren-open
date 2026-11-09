@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nick Fleuren Open – Uitslagen</title>
+<link rel="icon" href="tever-logo.png">
+<style>
+  :root {
+    --bg: #10161d; --panel: #1a2330; --panel-alt: #212c3a; --line: #34424f;
+    --chalk: #edeae1; --muted: #8ea0ae; --ball: #2850a0; --ball-light: #6ea0e0;
+    --clay: #bb5a3c; --live: #3fbf6f;
+    --rij: 7vh;          /* hoogte van één wedstrijdregel; wordt door het script ingesteld */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--chalk);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; overflow: hidden; }
+
+  header { display: flex; align-items: center; gap: 2vw; height: 11vh; padding: 0 2vw;
+    background: var(--ball); border-bottom: .5vh solid var(--ball-light); }
+  header img { height: 8vh; background: #fff; padding: .5vh .8vw; border-radius: .6vh; }
+  header .titel { flex: 1; }
+  header h1 { font-size: 4vh; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  header .sub { font-size: 2.2vh; opacity: .85; }
+  header .tellers { display: flex; gap: 1.2vw; font-size: 2.2vh; }
+  header .tellers span { background: rgba(255,255,255,.12); padding: .6vh 1vw; border-radius: 99px; }
+  header .tellers b { font-weight: 700; }
+  header .klok { font-size: 5.5vh; font-weight: 300; font-variant-numeric: tabular-nums; min-width: 12vw; text-align: right; }
+
+  main { height: 83vh; padding: 1.5vh 2vw; }
+  .kolom { display: grid; grid-auto-rows: var(--rij); gap: .5vh; align-content: start; }
+  .fade { animation: fade .5s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(.8vh); } }
+
+  .w { display: grid; align-items: center; gap: .8vw;
+    grid-template-columns: 4.2em 2.6em 9em 1fr 6.2em;
+    background: var(--panel); border-left: .6vh solid var(--line); border-radius: .5vh;
+    padding: 0 1vw; font-size: calc(var(--rij) * .3); line-height: 1.2; overflow: hidden; }
+  .bezig-tekst { display: none; }   /* het statuslabel / de bezig-kop toont "bezig" al */
+
+  /* Bovenaan, op elke pagina: wedstrijden die nu bezig zijn. Links baan 1 en 2, rechts baan 3 en 4 */
+  #bezig { display: grid; grid-template-columns: 1fr 1fr; gap: .6vh 1.2vw; margin-bottom: 1.4vh; }
+  #bezig[hidden] { display: none; }
+  #bezig .kop { grid-column: 1 / -1; font-size: 2.2vh; font-weight: 700; color: var(--live);
+    text-transform: uppercase; letter-spacing: .12em; }
+  #bezig .kop::before { content: "● "; animation: puls 2s infinite; }
+  #bezig .kol { display: grid; grid-auto-rows: var(--brij); gap: .6vh; }
+  .bk { display: grid; grid-template-columns: 3.2em 1fr; align-items: center; gap: .8vw;
+    background: #1d3326; border-left: .6vh solid var(--live); border-radius: .5vh;
+    padding: 0 1vw; font-size: calc(var(--brij) * .25); line-height: 1.2; overflow: hidden; }
+  .bk .bnr { text-align: center; color: var(--muted); font-size: .7em; line-height: 1; }
+  .bk .bnr b { display: block; font-size: 2.2em; color: var(--chalk); }
+  .bk .meta { color: var(--muted); font-size: .75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bk.vrij { background: transparent; border: .25vh dashed var(--line); border-left-width: .6vh; }
+  .bk.vrij .rest { color: var(--muted); font-size: .9em; }
+  .w:nth-child(even) { background: var(--panel-alt); }
+  .w.bezig { border-left-color: var(--live); background: #1d3326; }
+  .w.gespeeld { border-left-color: var(--ball-light); }
+  .w .tijd { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .w .baan { color: var(--muted); text-align: center; }
+  .w .baan b { color: var(--chalk); }
+  .w .ond { min-width: 0; }
+  .w .ond div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .w .ond div:first-child { font-weight: 600; }
+  .w .ond div + div { color: var(--muted); font-size: .85em; }
+  /* Teams met de games per set erachter, als op een scorebord (altijd ruimte voor 3 sets) */
+  .teams { min-width: 0; display: grid; grid-template-columns: minmax(0, 28em) repeat(3, 1.8em);
+    grid-template-rows: auto auto; column-gap: .3em; justify-content: start; }
+  .teams .naam { grid-column: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .teams .set { text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .teams .set.won { color: var(--chalk); font-weight: 700; }
+  .teams .tekst { grid-column: 2 / -1; grid-row: 1 / 3; align-self: center; text-align: right;
+    white-space: nowrap; font-weight: 700; }
+  .w.bezig .teams .tekst { color: var(--live); font-weight: 600; font-size: .85em; }
+  .w .winnaar { font-weight: 700; }
+  .w .verliezer { color: var(--muted); }
+  .w .status { text-align: right; font-size: .8em; text-transform: uppercase; letter-spacing: .06em; }
+  .w .status span { padding: .25em .7em; border-radius: 99px; background: var(--line); color: var(--muted); }
+  .w.bezig .status span { background: var(--live); color: #0b1a10; font-weight: 700; animation: puls 2s infinite; }
+  .w.gespeeld .status span { background: transparent; color: var(--ball-light); padding-right: 0; }
+  @keyframes puls { 50% { opacity: .55; } }
+
+  .leeg { font-size: 4vh; color: var(--muted); text-align: center; margin-top: 25vh; grid-column: 1 / -1; }
+  footer { height: 6vh; display: flex; align-items: center; gap: 1vw; padding: 0 2vw;
+    border-top: 1px solid var(--line); color: var(--muted); font-size: 1.9vh; }
+  footer .voortgang { flex: 1; height: .6vh; background: var(--line); border-radius: 99px; overflow: hidden; }
+  footer .voortgang div { height: 100%; width: 0; background: var(--ball-light); }
+  footer .voortgang[hidden] { visibility: hidden; display: block; }
+  .fout { color: var(--clay); }
+
+  .vol-hint { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(16,22,29,.55); cursor: pointer; z-index: 10; }
+  .vol-hint span { background: var(--ball); color: var(--chalk); font-size: 3.4vh; font-weight: 600;
+    padding: 2vh 3vw; border-radius: 1vh; border: .3vh solid var(--ball-light); }
+  .vol-hint[hidden] { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <img src="tever-logo.png" alt="TeVeR Rijkevoort">
+  <div class="titel">
+    <h1>Nick Fleuren Open</h1>
+    <div class="sub" id="subtitel">TeVeR Rijkevoort</div>
+  </div>
+  <div class="tellers" id="tellers"></div>
+  <div class="klok" id="klok">--:--</div>
+</header>
+<main><section id="bezig" hidden></section><div id="lijst"></div></main>
+<footer>
+  <span id="bijgewerkt">Laden…</span>
+  <div class="voortgang" id="voortgang" hidden><div id="balk"></div></div>
+  <span id="pagina"></span>
+</footer>
+<div class="vol-hint" id="volHint" hidden><span>Klik om schermvullend te tonen</span></div>
+
+<script src="config.js?v=6"></script>
+<script src="data.js?v=5"></script>
+<script>
+/* Dagoverzicht: alle wedstrijden van vandaag in één lijst (gepland, bezig en gespeeld).
+   Zijn het meer wedstrijden dan er op één pagina passen, dan wisselt het scherm tussen pagina's.
+   Opties in het adres: ?datum=dd-mm-jjjj   &rijen=8 (wedstrijden per pagina)   &sec=15 (seconden per pagina) */
+const params = new URLSearchParams(location.search);
+const SEC = Number(params.get("sec")) || 15;
+const PER_PAGINA = Number(params.get("rijen")) || 8;
+const VERVERS_SECONDEN = 60;
+// Lokaal geopend (dubbelklik): de gegevens van de live site gebruiken
+const CSV_URL = window.TOERNOOI?.CSV_URL ||
+  (location.protocol === "file:" ? "https://frank2601.github.io/nick-fleuren-open/wedstrijden.csv" : "");
+
+let lijst = [], pagina = 0, laatsteOk = "", fout = false;
+
+const MAX_RIJ = 9.5, RUIMTE = 80;   // regelhoogte en beschikbare hoogte in vh
+const BEZIG_RIJ = 9;                 // hoogte van een bezig-blok in vh
+const DEMO = params.has("demo");     // ?demo: zet een paar wedstrijden als voorbeeld op "bezig"
+let aantalPaginas = 1;
+
+// Bezig-blok voor één baan (of een lege baan)
+function bezigHTML(w, baan) {
+  if (!w) return `<div class="bk vrij"><div class="bnr">Baan<b>${esc(baan)}</b></div><div class="rest">vrij</div></div>`;
+  const meta = [w.onderdeel.replace(/ - Groep (\w+)$/, " ($1)"), w.ronde, w.tijd].filter(Boolean).join(" · ");
+  return `<div class="bk"><div class="bnr">Baan<b>${esc(w.baan || "?")}</b></div>
+    <div style="min-width:0"><div class="meta">${esc(meta)}</div>${teamsHTML(w)}</div></div>`;
+}
+
+// Links baan 1 en 2, rechts baan 3 en 4; wedstrijden op een andere of onbekende baan
+// komen erbij in de kolom die het kortst is. Geeft de hoogte in vh terug (0 = niets bezig).
+function toonBezig(bezig) {
+  const vak = document.getElementById("bezig");
+  if (!bezig.length) { vak.hidden = true; vak.innerHTML = ""; return 0; }
+  const opBaan = b => bezig.find(w => w.baan === b);
+  const links = ["1", "2"].map(b => bezigHTML(opBaan(b), b));
+  const rechts = ["3", "4"].map(b => bezigHTML(opBaan(b), b));
+  bezig.filter(w => !["1", "2", "3", "4"].includes(w.baan))
+    .forEach(w => (links.length <= rechts.length ? links : rechts).push(bezigHTML(w)));
+  const rijen = Math.max(links.length, rechts.length);
+  const brij = rijen > 2 ? BEZIG_RIJ * 2 / rijen : BEZIG_RIJ;
+  document.documentElement.style.setProperty("--brij", brij + "vh");
+  vak.innerHTML = `<div class="kop">Nu bezig</div><div class="kol">${links.join("")}</div><div class="kol">${rechts.join("")}</div>`;
+  vak.hidden = false;
+  return 3 + rijen * (brij + .6) + 1.4;   // kop + blokken + marge
+}
+
+function teamsHTML(w) {
+  const win = w.winnaar === "1" ? 1 : w.winnaar === "2" ? 2 : 0;
+  const cls = n => win ? (win === n ? "winnaar" : "verliezer") : "";
+  const s = sets(w.uitslag);
+  // Per team een regel: naam, daarachter de games per set (gewonnen set wit en vet).
+  // Alles staat op een vaste plek in het raster, zodat een tekst rechts niets kan verschuiven.
+  const regel = (n, naam) => `<div class="naam ${cls(n)}" style="grid-row:${n}">${esc(naam)}</div>` +
+    (s || []).map(([a, b], i) => {
+      const eigen = n === 1 ? a : b, ander = n === 1 ? b : a;
+      return `<div class="set${eigen > ander ? " won" : ""}" style="grid-row:${n};grid-column:${i + 2}">${eigen}</div>`;
+    }).join("");
+  // Geen setstand: rechts een tekst (walkover of afwijkende uitslag, of "● bezig")
+  const tekst = uitslagTekst(w) ? `<div class="tekst">${esc(uitslagTekst(w))}</div>`
+    : w.status === "bezig" ? `<div class="tekst bezig-tekst">● bezig</div>` : "";
+  return `<div class="teams">${regel(1, w.speler1)}${regel(2, w.speler2)}${tekst}</div>`;
+}
+
+function rijHTML(w) {
+  // Bij een walkover staat "Walkover" al bij de namen; dan geen statuslabel
+  const label = w.walkover ? "" : { bezig: "Bezig", gespeeld: "Gespeeld", gepland: "Gepland" }[w.status];
+  return `<div class="w ${w.status}">
+    <div class="tijd">${esc(w.tijd)}</div>
+    <div class="baan">${w.baan ? `<b>${esc(w.baan)}</b>` : "–"}</div>
+    <div class="ond"><div>${esc(w.onderdeel.replace(/ - Groep (\w+)$/, " ($1)"))}</div><div>${esc(w.ronde)}</div></div>
+    ${teamsHTML(w)}
+    <div class="status">${label ? `<span>${label}</span>` : ""}</div>
+  </div>`;
+}
+
+// nieuwePagina = true bij het wisselen van pagina (animatie + voortgangsbalk opnieuw starten)
+function toon(nieuwePagina = false) {
+  const main = document.getElementById("lijst");
+  const voortgang = document.getElementById("voortgang");
+  if (!lijst.length) {
+    toonBezig([]);
+    main.innerHTML = `<div class="leeg">${fout ? "Wedstrijden konden niet geladen worden." : "Vandaag geen wedstrijden."}</div>`;
+    document.getElementById("pagina").textContent = "";
+    voortgang.hidden = true;
+    return;
+  }
+  // Bezig staat bovenaan op elke pagina; de wisselende lijst eronder bevat de overige wedstrijden
+  const bezigHoogte = toonBezig(lijst.filter(w => w.status === "bezig"));
+  const rest = lijst.filter(w => w.status !== "bezig");
+  aantalPaginas = Math.max(1, Math.ceil(rest.length / PER_PAGINA));
+  pagina %= aantalPaginas;
+  const deel = rest.slice(pagina * PER_PAGINA, (pagina + 1) * PER_PAGINA);
+  // Regelhoogte voor een volle pagina, zodat elke pagina even groot is
+  const rij = Math.min(MAX_RIJ, (RUIMTE - bezigHoogte) / Math.max(1, Math.min(rest.length, PER_PAGINA)) - .5);
+
+  document.documentElement.style.setProperty("--rij", rij + "vh");
+  main.innerHTML = `<div class="kolom${nieuwePagina ? " fade" : ""}">${deel.map(rijHTML).join("")}</div>`;
+  document.getElementById("pagina").textContent = aantalPaginas > 1 ? `Pagina ${pagina + 1} / ${aantalPaginas}` : "";
+
+  voortgang.hidden = aantalPaginas < 2;
+  if (nieuwePagina && aantalPaginas > 1) {
+    const balk = document.getElementById("balk");
+    balk.style.transition = "none"; balk.style.width = "0";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      balk.style.transition = `width ${SEC}s linear`; balk.style.width = "100%";
+    }));
+  }
+}
+
+function toonTellers() {
+  const tel = s => lijst.filter(w => w.status === s).length;
+  document.getElementById("tellers").innerHTML = lijst.length ?
+    `<span><b>${tel("gespeeld")}</b> gespeeld</span><span><b>${tel("bezig")}</b> bezig</span><span><b>${tel("gepland")}</b> gepland</span>` : "";
+}
+
+async function laad() {
+  const status = document.getElementById("bijgewerkt");
+  try {
+    const { wedstrijden, bijgewerkt } = await laadWedstrijden(CSV_URL);
+    const dag = params.get("datum") || vandaag();
+    lijst = wedstrijden.filter(w => !w.datum || w.datum === dag)
+      .sort((a, b) => tijdSleutel(a.tijd) - tijdSleutel(b.tijd) || a.volgnr - b.volgnr);
+    if (DEMO) {   // voorbeeld: drie wedstrijden op baan 1, 2 en 4 laten "spelen" (liefst geplande)
+      const banen = ["1", "2", "4"];
+      const kandidaten = lijst.filter(w => w.status === "gepland").length >= 3
+        ? lijst.filter(w => w.status === "gepland") : lijst;
+      const kies = new Map(kandidaten.slice(0, 3).map((w, i) => [w, banen[i]]));
+      lijst = lijst.map(w => kies.has(w) ? { ...w, status: "bezig", uitslag: "", winnaar: "", walkover: false, baan: kies.get(w) } : w);
+    }
+    document.getElementById("subtitel").textContent = `TeVeR Rijkevoort · dagoverzicht ${dag}`;
+    fout = false;
+    laatsteOk = bijgewerkt;
+    status.className = "";
+    status.textContent = (DEMO ? "DEMO · " : "") + (bijgewerkt ? `Uitslagen bijgewerkt ${bijgewerkt}` : "");
+  } catch (e) {
+    fout = true;
+    status.className = "fout";
+    status.textContent = `Bijwerken mislukt${laatsteOk ? ` – stand van ${laatsteOk}` : ""}`;
+  }
+  toonTellers(); toon();
+}
+
+function klok() {
+  document.getElementById("klok").textContent =
+    new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+}
+
+klok(); setInterval(klok, 10000);
+laad().then(() => toon(true));
+setInterval(laad, VERVERS_SECONDEN * 1000);
+// Elk uur de hele pagina herladen, zodat een nieuwe versie vanzelf op het scherm komt
+setTimeout(() => location.reload(), 60 * 60 * 1000);
+setInterval(() => { pagina++; toon(true); }, SEC * 1000);
+addEventListener("resize", () => toon());
+// Pijltjestoetsen om zelf te bladeren
+addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") { pagina++; toon(true); }
+  if (e.key === "ArrowLeft") { pagina = pagina - 1 + aantalPaginas; toon(true); }
+});
+
+// Schermvullend: browsers staan dat alleen toe na een klik of toets van de gebruiker.
+// Ingebouwde browsers (bijv. Optoma) kunnen het vaak niet; de melding mag dan nooit blijven staan:
+// hij verdwijnt na de eerste klik of na 10 seconden, en met ?knop=nee verschijnt hij helemaal niet.
+const volHint = document.getElementById("volHint");
+let hintWeg = params.get("knop") === "nee";
+const isVol = () => document.fullscreenElement || innerHeight >= screen.height - 2;   // F11 of kiosk telt ook
+const werkHintBij = () => { volHint.hidden = !!(hintWeg || isVol() || !document.documentElement.requestFullscreen); };
+const maakVol = () => {
+  hintWeg = true; werkHintBij();
+  if (!isVol()) document.documentElement.requestFullscreen?.().catch(() => {});
+};
+setTimeout(() => { hintWeg = true; werkHintBij(); }, 10000);
+addEventListener("click", maakVol);
+addEventListener("keydown", maakVol);
+addEventListener("resize", werkHintBij);
+document.addEventListener("fullscreenchange", werkHintBij);
+werkHintBij();
+</script>
+</body>
+</html>
