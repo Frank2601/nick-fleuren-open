@@ -88,7 +88,7 @@ Datum,Onderdeel,Ronde,Tijd,Baan,Speler1,Speler2,Uitslag,Status,Winnaar
 11-11-2026,GD6 17+,Ronde 1,20:30,4,Sil Robben / Linda Luijpen,Tom Kuijpers / Suzanne Groenewegen,7-6 6-4,Gespeeld,1
 11-11-2026,HD7 17+,Ronde 3,21:30,2,Maurice van den Heuvel / Harm van Duijnhoven,Jeroen van den Hoogen [1] / Art Hendriks,6-1 4-6 10-12,Gespeeld,2
 11-11-2026,GD8 17+,Ronde 5,21:30,3,Rob Heesakkers / Fiona Fransen,Nick van der Bolt / Monique Graffius,6-2 6-0,Gespeeld,1
-11-11-2026,HD4 17+ - Groep A,Ronde 1,21:45,1,Nick Marcus [1] / Bart Jacobs,Kevin Jansen / Stef Jacobs,,Bezig,
+11-11-2026,HD4 17+ - Groep A,Ronde 1,21:45,1,Nick Marcus [1] / Bart Jacobs,Kevin Jansen / Stef Jacobs,6-3 3-6 10-7,Gespeeld,1
 12-11-2026,GD6 17+,Ronde 2,18:00,,Sebastiaan Remmen [1] / Karien Bentvelsen - van de Pas,Tom Kuijpers / Suzanne Groenewegen,,Gepland,
 12-11-2026,HD8 17+ - Groep B,Ronde 3,18:00,,Kay Gerrits / Jens Kocken,Frank Blonk / Harm Scheers,,Gepland,
 12-11-2026,DD8 17+,Ronde 2,18:00,,Aniek van de Pas / Kirsten Noij,Melissa Derks / Evelien Ankersmit - kirchner,,Gepland,
@@ -107,13 +107,23 @@ Datum,Onderdeel,Ronde,Tijd,Baan,Speler1,Speler2,Uitslag,Status,Winnaar
 13-11-2026,DD7 17+,Kwartfinale,18:00,,Dwen Surig / Francien Hermens,Sandra van As / Suzanne Groenewegen,,Gepland,
 13-11-2026,GD8 17+,Ronde 5,18:00,,Sanne Litjens / Stan Litjens,Louis van Dommelen [1] / Anke van Dommelen,,Gepland,
 13-11-2026,HD5 17+ - Groep B,Ronde 3,19:15,,Marcel Graffius / Arjan Feitsma,Jarno Kosman [2] / Remco Muyris,,Gepland,
-13-11-2026,GD6 17+,Ronde 5,19:15,,Bart van de Pas / Riky van Dommelen,Sil Robben / Linda Luijpen,,Gepland,
+13-11-2026,GD6 17+,Ronde 5,19:30,,Bart van de Pas / Riky van Dommelen,Sil Robben / Linda Luijpen,,Gepland,
 13-11-2026,DD7 17+,Kwartfinale,19:30,,Jacqueline Versteegen / Monique Kuypers,Maartje van de Kerkhof / Marieke van Duijnhoven,,Gepland,
 13-11-2026,GD8 17+,Ronde 3,20:30,,Rob Heesakkers / Fiona Fransen,Gert-jan Nabuurs / Aniek van de Pas,,Gepland,
 13-11-2026,DD7 17+,Kwartfinale,20:45,,Riky van Dommelen / Bianca Hermens,Kirsten Noij / Rosalynn Derks,,Gepland,
 14-11-2026,GD7 40+ - Groep B,Ronde 3,09:00,,Angelien van den Heuvel / Frans Daanen,Ursula van den Tillaart [2] / Jean- Pierre Kusters,,Gespeeld,2
+14-11-2026,DD6 17+,Halve finale,09:30,,Jessie Remmen - v.d. Pas / Anke Broeks,Groep B #1,,Gepland,
 14-11-2026,GD7 17+,Halve finale,09:30,,Nick Verstraaten / Sofie Daanen,Monique Breijer / Arjan Breijer,,Gepland,
 14-11-2026,HD4 17+ - Groep B,Ronde 1,11:00,,Nick Kokje [2] / Sam Jacobs,Roy Verstraaten / Sjors Janssen,,Gepland,
 14-11-2026,GD8 17+,Ronde 3,11:00,,Sanne Litjens / Stan Litjens,Nick van der Bolt / Monique Graffius,,Gepland,
+14-11-2026,DD6 17+,Halve finale,12:00,,Eline Vloet / Fleur Peters,Groep B #2,,Gepland,
 14-11-2026,DE7 17+,Halve finale,12:30,,Esther Huberts,Ingrid Lochs,,Gepland,
+14-11-2026,GD7 40+,Halve finale,13:30,,Groep A #1,Groep B #2,,Gepland,
+14-11-2026,GD7 40+,Halve finale,13:30,,Groep A #2,Groep B #1,,Gepland,
+14-11-2026,DD7 17+,Halve finale,14:00,,,,,Gepland,
+14-11-2026,DD7 17+,Halve finale,14:00,,,,,Gepland,
+14-11-2026,HD5 17+,Halve finale,15:00,,Nick Fleuren / Nick Marcus,Groep B #1,,Gepland,
+14-11-2026,HD4 17+,Halve finale,15:30,,Nick Marcus / Bart Jacobs,Groep B #2,,Gepland,
+14-11-2026,HD4 17+,Halve finale,15:30,,Mitch Verstraaten / Flynn Hendriks,Groep B #1,,Gepland,
 14-11-2026,DE7 17+,Halve finale,16:30,,Marloes van der Linde,Christel van den Hoogen,,Gepland,
+14-11-2026,HD8 17+,Halve finale,16:30,,Patrick Litjens / Gert-jan Nabuurs,Groep B #1,,Gepland,
