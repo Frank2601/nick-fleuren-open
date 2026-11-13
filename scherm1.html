@@ -231,7 +231,8 @@ function bouwSchemas(wedstrijden) {
     if (eerste === 0) kolommen.kf = plaats(per.kf, 4, kolommen.hf);
     // Lege vakken na de eerste ronde: "nog te bepalen", met de winnaars die al bekend zijn
     rondes.forEach((r, ri) => {
-      if (ri === 0) return;
+      // Eerste ronde: een vak zonder wedstrijd (nog niet ingepland) toch tonen
+      if (ri === 0) { kolommen[r.code] = kolommen[r.code].map(w => w || { open: true, ronde: r.naam, speler1: "", speler2: "" }); return; }
       const vorige = kolommen[rondes[ri - 1].code];
       kolommen[r.code] = kolommen[r.code].map((w, i) => w
         // Ingeplande wedstrijd waarvan een speler nog leeg is: alvast de winnaar uit de vorige ronde
