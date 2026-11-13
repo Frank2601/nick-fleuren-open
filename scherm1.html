@@ -80,6 +80,26 @@
   .verliezer { color: var(--muted); }
   .kaart.finale .winnaar { color: var(--gold); }
 
+  /* Pagina met de poulewedstrijden van vandaag */
+  .poule { display: flex; flex-direction: column; gap: .8vh; min-height: 0; }
+  .poule .bandkop { margin-bottom: .4vh; }
+  .prij { display: grid; grid-template-columns: 5em 4em 11em minmax(0, 1fr) 7em; align-items: center; gap: 1vw;
+    background: var(--panel); border-left: .6vh solid var(--line); border-radius: .6vh;
+    padding: 1.1vh 1.2vw; font-size: 2.6vh; line-height: 1.25; box-shadow: 0 .4vh 1.2vh rgba(0,0,0,.25); }
+  .prij:nth-child(odd) { background: var(--panel-alt); }
+  .prij.gespeeld { border-left-color: var(--ball-light); }
+  .prij.bezig { border-left-color: var(--live); background: #19362a; }
+  .prij .tijd { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .prij .baan { color: var(--muted); font-size: .85em; }
+  .prij .baan b { color: var(--chalk); font-size: 1.15em; }
+  .prij .ond div:first-child { color: var(--gold); font-weight: 700; }
+  .prij .ond div + div { color: var(--muted); font-size: .8em; }
+  .prij .teams { grid-template-columns: minmax(0, 32em) repeat(3, 1.7em); justify-content: start; }
+  .prij .status { text-align: right; font-size: .75em; text-transform: uppercase; letter-spacing: .08em; }
+  .prij .status span { padding: .2em .8em; border-radius: 99px; background: var(--line); color: var(--muted); }
+  .prij.bezig .status span { background: var(--live); color: #0b1a10; font-weight: 700; animation: puls 2s infinite; }
+  .prij.gespeeld .status span { background: transparent; color: var(--ball-light); padding-right: 0; }
+
   .leeg-scherm { font-size: 4vh; color: var(--muted); text-align: center; margin-top: 25vh; }
   footer { height: 6vh; display: flex; align-items: center; gap: 1vw; padding: 0 2vw;
     border-top: 1px solid var(--line); color: var(--muted); font-size: 1.9vh; }
@@ -117,7 +137,9 @@
 <script>
 /* Finaleweekend: per onderdeel een schema van kwartfinales, halve finales en finale.
    Het scherm wisselt tussen de onderdelen (een groot schema per pagina, kleinere met twee tegelijk).
-   Opties in het adres: &sec=20 (seconden per pagina)   &demo (voorbeeld met verzonnen uitslagen)   &knop=nee */
+   Vooraan een pagina met de poulewedstrijden van vandaag (alleen als die er zijn).
+   Opties in het adres: &sec=20 (seconden per pagina)   &demo (voorbeeld met verzonnen uitslagen)
+   &datum=dd-mm-jjjj (poulewedstrijden van een andere dag)   &knop=nee */
 const params = new URLSearchParams(location.search);
 const SEC = Number(params.get("sec")) || 20;
 const DEMO = params.has("demo");
@@ -203,14 +225,37 @@ function bouwSchemas(wedstrijden) {
 }
 
 // Verdeel de schema's over pagina's: een groot schema alleen, kleinere samen
-// (elk schema op de eerste pagina waar het nog bij past, zodat er geen halflege pagina's zijn)
-function maakPaginas(schemas) {
+// (elk schema op de eerste pagina waar het nog bij past, zodat er geen halflege pagina's zijn).
+// Vooraan de pagina('s) met de poulewedstrijden van vandaag, als die er zijn.
+const POULE_PER_PAGINA = 7;
+function maakPaginas(schemas, poule) {
   const res = [];
   for (const s of schemas) {
     const p = res.find(p => p.reduce((t, x) => t + x.vakken, 0) + s.vakken <= RUIMTE_PER_PAGINA);
     if (p) p.push(s); else res.push([s]);
   }
-  return res;
+  const poulePaginas = [];
+  for (let i = 0; i < poule.length; i += POULE_PER_PAGINA)
+    poulePaginas.push({ poule: poule.slice(i, i + POULE_PER_PAGINA), deel: i / POULE_PER_PAGINA + 1,
+      delen: Math.ceil(poule.length / POULE_PER_PAGINA) });
+  return poulePaginas.concat(res);
+}
+
+function pouleHTML(p) {
+  const rijen = p.poule.map(w => {
+    const label = w.walkover ? "" : { bezig: "Bezig", gespeeld: "Gespeeld", gepland: "Gepland" }[w.status];
+    const groep = (/ - Groep (\w+)$/.exec(w.onderdeel) || [])[1];
+    return `<div class="prij ${w.status}">
+      <div class="tijd">${esc(w.tijd)}</div>
+      <div class="baan">${w.baan ? `Baan <b>${esc(w.baan)}</b>` : "–"}</div>
+      <div class="ond"><div>${esc(w.onderdeel.replace(/ - Groep.*$/, ""))}</div><div>${groep ? `Groep ${esc(groep)} · ` : "Poule · "}${esc(w.ronde)}</div></div>
+      ${teamsHTML(w, false)}
+      <div class="status">${label ? `<span>${label}</span>` : ""}</div>
+    </div>`;
+  }).join("");
+  return `<section class="poule">
+    <div class="bandkop"><h2>Poulewedstrijden</h2><span>${esc(dagNaam(p.dag))}${p.delen > 1 ? ` · ${p.deel} / ${p.delen}` : ""}</span></div>
+    ${rijen}</section>`;
 }
 
 function teamsHTML(w, finale) {
@@ -273,7 +318,8 @@ function toon(nieuwePagina = false) {
   pagina = ((pagina % paginas.length) + paginas.length) % paginas.length;
   main.className = nieuwePagina ? "fade" : "";
   if (nieuwePagina) void main.offsetWidth;   // animatie opnieuw starten
-  main.innerHTML = paginas[pagina].map(schemaHTML).join("");
+  const p = paginas[pagina];
+  main.innerHTML = p.poule ? pouleHTML(p) : p.map(schemaHTML).join("");
   document.getElementById("pagina").textContent = paginas.length > 1 ? `Pagina ${pagina + 1} / ${paginas.length}` : "";
   voortgang.hidden = paginas.length < 2;
   if (nieuwePagina && paginas.length > 1) {
@@ -311,7 +357,12 @@ async function laad() {
   try {
     const { wedstrijden, bijgewerkt } = await laadWedstrijden(CSV_URL);
     const schemas = bouwSchemas(wedstrijden);
-    paginas = maakPaginas(DEMO ? demo(schemas) : schemas);
+    // Poulewedstrijden (alles wat geen kwartfinale, halve finale of finale is) van vandaag
+    const dag = params.get("datum") || vandaag();
+    const poule = wedstrijden.filter(w => w.datum === dag && !RONDES.some(r => r.test(w.ronde)))
+      .sort((a, b) => tijdSleutel(a.tijd) - tijdSleutel(b.tijd) || a.volgnr - b.volgnr);
+    paginas = maakPaginas(DEMO ? demo(schemas) : schemas, poule);
+    paginas.forEach(p => { if (p.poule) p.dag = dag; });
     fout = false;
     laatsteOk = bijgewerkt;
     status.className = "";
