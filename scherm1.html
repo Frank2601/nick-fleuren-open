@@ -25,8 +25,27 @@
   header .sub { font-size: 2.3vh; color: var(--gold); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   header .klok { font-size: 5.5vh; font-weight: 300; font-variant-numeric: tabular-nums; }
 
-  main { height: 83vh; padding: 1.5vh 2vw; display: flex; flex-direction: column; gap: 1.8vh; }
-  main.fade { animation: fade .6s ease; }
+  main { height: 83vh; padding: 1.5vh 2vw; display: flex; flex-direction: column; }
+  #inhoud { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1.8vh; }
+  #inhoud.fade { animation: fade .6s ease; }
+
+  /* Bovenaan elke pagina: wat er nu gespeeld wordt. Links baan 1 en 2, rechts baan 3 en 4 */
+  #bezig { display: grid; grid-template-columns: 1fr 1fr; gap: .6vh 1.2vw; margin-bottom: 1.6vh; }
+  #bezig[hidden] { display: none; }
+  #bezig .kop { grid-column: 1 / -1; font-size: 2.2vh; font-weight: 700; color: var(--live);
+    text-transform: uppercase; letter-spacing: .12em; }
+  #bezig .kop::before { content: "● "; animation: puls 2s infinite; }
+  #bezig .kol { display: grid; grid-auto-rows: var(--brij, 9vh); gap: .6vh; }
+  .bk { display: grid; grid-template-columns: 3.2em 1fr; align-items: center; gap: .8vw;
+    background: #19362a; border-left: .6vh solid var(--live); border-radius: .6vh;
+    padding: 0 1vw; font-size: min(2.4vh, calc(var(--brij, 9vh) * .26)); line-height: 1.2; overflow: hidden; }
+  .bk .bnr { text-align: center; color: var(--muted); font-size: .7em; line-height: 1; }
+  .bk .bnr b { display: block; font-size: 2.2em; color: var(--chalk); }
+  .bk .meta { color: var(--muted); font-size: .75em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bk .meta b { color: var(--gold); font-weight: 700; }
+  .bk.vrij { background: #2f7a4a; border-left-color: #4caf6e; box-shadow: inset 0 0 0 .35vh rgba(255,255,255,.55); }
+  .bk.vrij .bnr, .bk.vrij .bnr b { color: #fff; }
+  .bk.vrij .rest { color: #fff; font-size: 1.1em; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
   @keyframes fade { from { opacity: 0; transform: translateY(1vh); } }
 
   /* Eén onderdeel = een band met een kop en het schema */
@@ -124,7 +143,7 @@
   </div>
   <div class="klok" id="klok">--:--</div>
 </header>
-<main id="main"></main>
+<main><section id="bezig" hidden></section><div id="inhoud"></div></main>
 <footer>
   <span id="bijgewerkt">Laden…</span>
   <div class="voortgang" id="voortgang" hidden><div id="balk"></div></div>
@@ -227,8 +246,8 @@ function bouwSchemas(wedstrijden) {
 // Verdeel de schema's over pagina's: een groot schema alleen, kleinere samen
 // (elk schema op de eerste pagina waar het nog bij past, zodat er geen halflege pagina's zijn).
 // Vooraan de pagina('s) met de poulewedstrijden van vandaag, als die er zijn.
-const POULE_PER_PAGINA = 7;
-function maakPaginas(schemas, poule) {
+function maakPaginas(schemas, poule, bezigZichtbaar) {
+  const POULE_PER_PAGINA = bezigZichtbaar ? 5 : 7;   // minder regels als het bezig-blok ruimte inneemt
   const res = [];
   for (const s of schemas) {
     const p = res.find(p => p.reduce((t, x) => t + x.vakken, 0) + s.vakken <= RUIMTE_PER_PAGINA);
@@ -306,8 +325,34 @@ function schemaHTML(s) {
   </section>`;
 }
 
+// Bezig-blok voor één baan (of een vrije baan)
+function bezigBlok(w, baan) {
+  if (!w) return `<div class="bk vrij"><div class="bnr">Baan<b>${esc(baan)}</b></div><div class="rest">vrij</div></div>`;
+  const r = RONDES.find(r => r.test(w.ronde));
+  const ond = esc((w.onderdeel || "").replace(/ - Groep (\w+)$/, " ($1)"));
+  const meta = [r ? `<b>${r.code === "f" ? "🏆 " : ""}${esc(r.naam)}</b>` : esc(w.ronde), ond, esc(w.tijd)].filter(Boolean).join(" · ");
+  return `<div class="bk"><div class="bnr">Baan<b>${esc(w.baan || "?")}</b></div>
+    <div style="min-width:0"><div class="meta">${meta}</div>${teamsHTML(w, false)}</div></div>`;
+}
+
+let bezigNu = [];
+function toonBezig() {
+  const vak = document.getElementById("bezig");
+  if (!bezigNu.length) { vak.hidden = true; vak.innerHTML = ""; return; }
+  const over = [...bezigNu];
+  const neem = b => { const i = over.findIndex(w => w.baan === b); return i < 0 ? null : over.splice(i, 1)[0]; };
+  const links = ["1", "2"].map(b => bezigBlok(neem(b), b));
+  const rechts = ["3", "4"].map(b => bezigBlok(neem(b), b));
+  over.forEach(w => (links.length <= rechts.length ? links : rechts).push(bezigBlok(w)));   // andere/onbekende baan
+  const rijen = Math.max(links.length, rechts.length);
+  document.documentElement.style.setProperty("--brij", (rijen > 2 ? 18 / rijen : 9) + "vh");
+  vak.innerHTML = `<div class="kop">Nu bezig</div><div class="kol">${links.join("")}</div><div class="kol">${rechts.join("")}</div>`;
+  vak.hidden = false;
+}
+
 function toon(nieuwePagina = false) {
-  const main = document.getElementById("main");
+  toonBezig();
+  const main = document.getElementById("inhoud");
   const voortgang = document.getElementById("voortgang");
   if (!paginas.length) {
     main.innerHTML = `<div class="leeg-scherm">${fout ? "Wedstrijden konden niet geladen worden." : "Nog geen kwartfinales, halve finales of finales."}</div>`;
@@ -335,17 +380,18 @@ function toon(nieuwePagina = false) {
 function demo(schemas) {
   let teller = 0;
   const uitslagen = ["6-4 6-3", "7-5 3-6 10-8", "6-2 7-6", "4-6 6-3 10-6"];
+  const banen = ["1", "4"];   // vrije banen voor de demo (baan 3: poulewedstrijd, baan 2 blijft vrij)
   schemas.forEach((s, si) => s.rondes.forEach((r, ri) => {
     const vorige = ri ? s.kolommen[s.rondes[ri - 1].code] : [];
     s.kolommen[r.code] = s.kolommen[r.code].map((w, i) => {
       if (!w) return w;
       w = { ...w, speler1: w.speler1 || winnaarVan(vorige[2 * i]), speler2: w.speler2 || winnaarVan(vorige[2 * i + 1]) };
       if (w.uitslag || w.winnaar || !w.speler1 || !w.speler2) return w;
-      if (r.code === "f") return { ...w, open: false, datum: "15-11-2026", tijd: `${10 + si % 6}:00`, baan: String(1 + si % 4),
-        ...(si % 3 === 0 ? { status: "bezig" } : si % 3 === 1
+      if (r.code === "f") return { ...w, open: false, datum: "15-11-2026", tijd: `${10 + si % 6}:00`, baan: "",
+        ...(si % 3 === 0 && banen.length ? { status: "bezig", baan: banen.shift() } : si % 3 === 1
           ? { status: "gespeeld", uitslag: "6-3 4-6 10-7", winnaar: "1" } : { status: "gepland" }) };
       teller++;
-      if (teller % 6 === 0) return { ...w, open: false, status: "bezig", baan: String(1 + teller % 4) };
+      if (teller % 6 === 0 && banen.length) return { ...w, open: false, status: "bezig", baan: banen.shift() };
       return { ...w, open: false, status: "gespeeld", uitslag: uitslagen[teller % 4], winnaar: teller % 3 ? "1" : "2" };
     });
   }));
@@ -359,9 +405,16 @@ async function laad() {
     const schemas = bouwSchemas(wedstrijden);
     // Poulewedstrijden (alles wat geen kwartfinale, halve finale of finale is) van vandaag
     const dag = params.get("datum") || vandaag();
-    const poule = wedstrijden.filter(w => w.datum === dag && !RONDES.some(r => r.test(w.ronde)))
+    let poule = wedstrijden.filter(w => w.datum === dag && !RONDES.some(r => r.test(w.ronde)))
       .sort((a, b) => tijdSleutel(a.tijd) - tijdSleutel(b.tijd) || a.volgnr - b.volgnr);
-    paginas = maakPaginas(DEMO ? demo(schemas) : schemas, poule);
+    if (DEMO) poule = poule.map((w, i) => i === 0 && w.status === "gepland" ? { ...w, status: "bezig", baan: "3" } : w);
+    const alle = DEMO ? demo(schemas) : schemas;
+    // Nu bezig: poulewedstrijden van vandaag en wedstrijden uit de schema's
+    bezigNu = poule.filter(w => w.status === "bezig").concat(alle.flatMap(s =>
+      s.rondes.flatMap(r => s.kolommen[r.code].filter(w => w && !w.open && w.status === "bezig")
+        .map(w => ({ ...w, onderdeel: w.onderdeel || s.ond, ronde: w.ronde || r.naam })))))
+      .sort((a, b) => tijdSleutel(a.tijd) - tijdSleutel(b.tijd));
+    paginas = maakPaginas(alle, poule.filter(w => w.status !== "bezig"), bezigNu.length > 0);
     paginas.forEach(p => { if (p.poule) p.dag = dag; });
     fout = false;
     laatsteOk = bijgewerkt;
