@@ -257,6 +257,8 @@ function maakPaginas(schemas, poule, bezigZichtbaar) {
   for (let i = 0; i < poule.length; i += POULE_PER_PAGINA)
     poulePaginas.push({ poule: poule.slice(i, i + POULE_PER_PAGINA), deel: i / POULE_PER_PAGINA + 1,
       delen: Math.ceil(poule.length / POULE_PER_PAGINA) });
+  // Alle poulewedstrijden zijn bezig (of klaar)? Dan toch een pagina, zodat "Nu bezig" te zien is
+  if (!poulePaginas.length && bezigZichtbaar) poulePaginas.push({ poule: [], deel: 1, delen: 1 });
   return poulePaginas.concat(res);
 }
 
@@ -272,6 +274,7 @@ function pouleHTML(p) {
       <div class="status">${label ? `<span>${label}</span>` : ""}</div>
     </div>`;
   }).join("");
+  if (!p.poule.length) return "";   // alleen het bezig-blok
   return `<section class="poule">
     <div class="bandkop"><h2>Poulewedstrijden</h2><span>${esc(dagNaam(p.dag))}${p.delen > 1 ? ` · ${p.deel} / ${p.delen}` : ""}</span></div>
     ${rijen}</section>`;
@@ -351,7 +354,6 @@ function toonBezig() {
 }
 
 function toon(nieuwePagina = false) {
-  toonBezig();
   const main = document.getElementById("inhoud");
   const voortgang = document.getElementById("voortgang");
   if (!paginas.length) {
@@ -364,6 +366,11 @@ function toon(nieuwePagina = false) {
   main.className = nieuwePagina ? "fade" : "";
   if (nieuwePagina) void main.offsetWidth;   // animatie opnieuw starten
   const p = paginas[pagina];
+  // "Nu bezig" alleen op de pagina('s) met poulewedstrijden; de schema's houden het hele scherm
+  const bewaar = bezigNu;
+  if (!p.poule) bezigNu = [];
+  toonBezig();
+  bezigNu = bewaar;
   main.innerHTML = p.poule ? pouleHTML(p) : p.map(schemaHTML).join("");
   document.getElementById("pagina").textContent = paginas.length > 1 ? `Pagina ${pagina + 1} / ${paginas.length}` : "";
   voortgang.hidden = paginas.length < 2;
@@ -414,7 +421,8 @@ async function laad() {
       s.rondes.flatMap(r => s.kolommen[r.code].filter(w => w && !w.open && w.status === "bezig")
         .map(w => ({ ...w, onderdeel: w.onderdeel || s.ond, ronde: w.ronde || r.naam })))))
       .sort((a, b) => tijdSleutel(a.tijd) - tijdSleutel(b.tijd));
-    paginas = maakPaginas(alle, poule.filter(w => w.status !== "bezig"), bezigNu.length > 0);
+    // Het bezig-blok hoort bij de poulepagina; op een dag zonder poulewedstrijden is er geen bezig-blok
+    paginas = maakPaginas(alle, poule.filter(w => w.status !== "bezig"), poule.length > 0 && bezigNu.length > 0);
     paginas.forEach(p => { if (p.poule) p.dag = dag; });
     fout = false;
     laatsteOk = bijgewerkt;
