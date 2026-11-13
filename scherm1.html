@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nick Fleuren Open – Finaleweekend</title>
+<link rel="icon" href="tever-logo.png">
+<style>
+  :root {
+    --bg: #0d1420; --panel: #172233; --panel-alt: #1c2a3e; --line: #3a4d63;
+    --chalk: #f1eee6; --muted: #8fa1b3; --ball: #2850a0; --ball-light: #6ea0e0;
+    --gold: #e3b54d; --gold-dark: #8a6a22; --live: #3fbf6f;
+    --gat: 3.2vw;   /* ruimte tussen de rondes, waarin de lijnen lopen */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; color: var(--chalk); overflow: hidden;
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    background: radial-gradient(ellipse at 50% 0%, #1a2a44 0%, var(--bg) 60%); }
+
+  header { display: flex; align-items: center; gap: 2vw; height: 11vh; padding: 0 2vw;
+    background: linear-gradient(90deg, var(--ball), #1d3d7c); border-bottom: .5vh solid var(--gold); }
+  header img { height: 8vh; background: #fff; padding: .5vh .8vw; border-radius: .6vh; }
+  header .titel { flex: 1; }
+  header h1 { font-size: 4vh; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+  header .sub { font-size: 2.3vh; color: var(--gold); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  header .klok { font-size: 5.5vh; font-weight: 300; font-variant-numeric: tabular-nums; }
+
+  main { height: 83vh; padding: 1.5vh 2vw; display: flex; flex-direction: column; gap: 1.8vh; }
+  main.fade { animation: fade .6s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(1vh); } }
+
+  /* Eén onderdeel = een band met een kop en het schema */
+  .band { display: flex; flex-direction: column; min-height: 0; }
+  .bandkop { display: flex; align-items: baseline; gap: 1.2vw; margin-bottom: .6vh; }
+  .bandkop h2 { font-size: 3.4vh; color: var(--gold); letter-spacing: .04em; }
+  .bandkop span { font-size: 2vh; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .schema { flex: 1; display: grid; column-gap: var(--gat); min-height: 0; }
+  .ronde { display: flex; flex-direction: column; min-height: 0; }
+  .rkop { font-size: 1.7vh; text-transform: uppercase; letter-spacing: .14em; color: var(--muted);
+    padding-bottom: .5vh; border-bottom: 1px solid var(--line); margin-bottom: .4vh; }
+  .ronde.f .rkop { color: var(--gold); }
+  .slots { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .slot { flex: 1; position: relative; display: flex; align-items: center; min-height: 0; padding: .4vh 0; }
+
+  /* Lijnen: van elk vak naar rechts, per paar samengevoegd, en de volgende ronde in */
+  .slot.met-lijn::after { content: ""; position: absolute; left: 100%; width: calc(var(--gat) / 2);
+    border-color: var(--line); border-style: solid; border-width: 0; }
+  .slot.met-lijn.boven::after { top: 50%; bottom: 0; border-top-width: .3vh; border-right-width: .3vh; }
+  .slot.met-lijn.onder::after { top: 0; bottom: 50%; border-bottom-width: .3vh; border-right-width: .3vh; }
+  .slot.met-lijn.los::after { top: 50%; border-top-width: .3vh; }
+  .slot.van-links::before { content: ""; position: absolute; right: 100%; top: 50%; width: calc(var(--gat) / 2);
+    border-top: .3vh solid var(--line); }
+  .ronde.f .slot.van-links::before { border-top-color: var(--gold-dark); }
+
+  .kaart { width: 100%; background: var(--panel); border-left: .6vh solid var(--line); border-radius: .6vh;
+    padding: .9vh 1vw; font-size: 2.4vh; line-height: 1.25; box-shadow: 0 .4vh 1.2vh rgba(0,0,0,.25); }
+  .schema.drie { --gat: 2.4vw; }
+  .schema.drie .kaart { font-size: 2.2vh; }   /* drie rondes naast elkaar: iets kleiner, zodat namen passen */
+  .kaart.gespeeld { border-left-color: var(--ball-light); }
+  .kaart.bezig { border-left-color: var(--live); background: #19362a; }
+  .kaart.finale { border: .3vh solid var(--gold); border-left-width: .8vh; background: linear-gradient(135deg, #2a2615, var(--panel) 70%); }
+  .kaart.finale.bezig { background: linear-gradient(135deg, #2a2615, #19362a 70%); }
+  .kaart.open { background: transparent; border: .25vh dashed var(--line); box-shadow: none; }
+  .kaart.open.finale { border-color: var(--gold-dark); }
+  .kmeta { display: flex; gap: .8vw; align-items: center; font-size: .72em; color: var(--muted); margin-bottom: .3vh; white-space: nowrap; }
+  .kmeta b { color: var(--chalk); font-weight: 600; }
+  .kmeta .pil { margin-left: auto; padding: .1em .7em; border-radius: 99px; text-transform: uppercase;
+    letter-spacing: .08em; font-weight: 700; font-size: .9em; }
+  .kaart.bezig .pil { background: var(--live); color: #0b1a10; animation: puls 2s infinite; }
+  .kaart.finale .pil.kampioen { background: var(--gold); color: #2a1f05; }
+  @keyframes puls { 50% { opacity: .55; } }
+
+  .teams { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 1.7em); column-gap: .3em; }
+  .teams .naam { grid-column: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .teams .naam.leeg { color: var(--muted); font-style: italic; }
+  .teams .set { text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .teams .set.won { color: var(--chalk); font-weight: 700; }
+  .teams .tekst { grid-column: 2 / -1; grid-row: 1 / 3; align-self: center; text-align: right; font-weight: 700; white-space: nowrap; }
+  .winnaar { font-weight: 700; }
+  .verliezer { color: var(--muted); }
+  .kaart.finale .winnaar { color: var(--gold); }
+
+  .leeg-scherm { font-size: 4vh; color: var(--muted); text-align: center; margin-top: 25vh; }
+  footer { height: 6vh; display: flex; align-items: center; gap: 1vw; padding: 0 2vw;
+    border-top: 1px solid var(--line); color: var(--muted); font-size: 1.9vh; }
+  footer .voortgang { flex: 1; height: .6vh; background: var(--line); border-radius: 99px; overflow: hidden; }
+  footer .voortgang div { height: 100%; width: 0; background: var(--gold); }
+  footer .voortgang[hidden] { visibility: hidden; display: block; }
+  .fout { color: #e07a5f; }
+
+  .vol-hint { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(13,20,32,.55); cursor: pointer; z-index: 10; }
+  .vol-hint span { background: var(--ball); color: var(--chalk); font-size: 3.4vh; font-weight: 600;
+    padding: 2vh 3vw; border-radius: 1vh; border: .3vh solid var(--gold); }
+  .vol-hint[hidden] { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <img src="tever-logo.png" alt="TeVeR Rijkevoort">
+  <div class="titel">
+    <h1>Nick Fleuren Open</h1>
+    <div class="sub">🏆 Finaleweekend</div>
+  </div>
+  <div class="klok" id="klok">--:--</div>
+</header>
+<main id="main"></main>
+<footer>
+  <span id="bijgewerkt">Laden…</span>
+  <div class="voortgang" id="voortgang" hidden><div id="balk"></div></div>
+  <span id="pagina"></span>
+</footer>
+<div class="vol-hint" id="volHint" hidden><span>Klik om schermvullend te tonen</span></div>
+
+<script src="config.js?v=6"></script>
+<script src="data.js?v=5"></script>
+<script>
+/* Finaleweekend: per onderdeel een schema van kwartfinales, halve finales en finale.
+   Het scherm wisselt tussen de onderdelen (een groot schema per pagina, kleinere met twee tegelijk).
+   Opties in het adres: &sec=20 (seconden per pagina)   &demo (voorbeeld met verzonnen uitslagen)   &knop=nee */
+const params = new URLSearchParams(location.search);
+const SEC = Number(params.get("sec")) || 20;
+const DEMO = params.has("demo");
+const VERVERS_SECONDEN = 60;
+const CSV_URL = window.TOERNOOI?.CSV_URL ||
+  (location.protocol === "file:" ? "https://frank2601.github.io/nick-fleuren-open/wedstrijden.csv" : "");
+
+const RONDES = [
+  { code: "kf", naam: "Kwartfinale", test: r => /^kwart/i.test(r), vakken: 4 },
+  { code: "hf", naam: "Halve finale", test: r => /^halve/i.test(r), vakken: 2 },
+  { code: "f", naam: "Finale", test: r => /^finale$/i.test(r), vakken: 1 },
+];
+const RUIMTE_PER_PAGINA = 4;   // vakken in de eerste ronde die samen op één pagina passen
+
+let paginas = [], pagina = Math.max(0, (Number(params.get("pagina")) || 1) - 1), laatsteOk = "", fout = false;   // &pagina=2: begin op pagina 2
+
+// "GD7 17+" → "Gemengd dubbel · 17+"
+function omschrijving(ond) {
+  const m = /^([HDG])([DE])(\d+)\s*(.*)$/.exec(ond.replace(/ - Groep.*$/, ""));
+  if (!m) return "";
+  return [{ H: "Heren", D: "Dames", G: "Gemengd" }[m[1]] + " " + (m[2] === "D" ? "dubbel" : "enkel"),
+    "categorie " + m[3], m[4]].filter(Boolean).join(" · ");
+}
+
+const dagNaam = d => {
+  const [dd, mm, jj] = (d || "").split("-").map(Number);
+  if (!jj) return "";
+  return new Date(jj, mm - 1, dd).toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" }).replace(".", "");
+};
+
+// Team dat doorgaat: de winnaar, of "" als de wedstrijd nog niet gespeeld is
+const winnaarVan = w => !w || w.open ? (w && w.doorWinnaar) || "" : w.winnaar === "1" ? w.speler1 : w.winnaar === "2" ? w.speler2 : "";
+const speelt = (w, team) => !!team && w && (w.speler1 === team || w.speler2 === team);
+const kanKomenUit = (vorige, team) => speelt(vorige, team) &&
+  (!vorige.winnaar || winnaarVan(vorige) === team);
+
+// Zet de wedstrijden van een ronde in de juiste vakken, zodat ze aansluiten op de volgende ronde
+function plaats(wedstrijden, aantal, volgende) {
+  const vakken = Array(aantal).fill(null), over = [...wedstrijden];
+  if (volgende) volgende.forEach((v, i) => {
+    if (!v) return;
+    [v.speler1, v.speler2].forEach((team, kant) => {
+      const j = over.findIndex(w => kanKomenUit(w, team));
+      if (j >= 0 && !vakken[2 * i + kant]) vakken[2 * i + kant] = over.splice(j, 1)[0];
+    });
+  });
+  for (let i = 0; i < aantal && over.length; i++) if (!vakken[i]) vakken[i] = over.shift();
+  return vakken.concat(over);   // meer wedstrijden dan verwacht: toch tonen
+}
+
+function bouwSchemas(wedstrijden) {
+  const perOnderdeel = new Map();
+  for (const w of wedstrijden) {
+    const r = RONDES.find(r => r.test(w.ronde));
+    if (!r) continue;
+    const ond = w.onderdeel.replace(/ - Groep.*$/, "");
+    if (!perOnderdeel.has(ond)) perOnderdeel.set(ond, { kf: [], hf: [], f: [] });
+    perOnderdeel.get(ond)[r.code].push(w);
+  }
+  const schemas = [];
+  for (const [ond, per] of perOnderdeel) {
+    const opTijd = (a, b) => datumSleutel(a.datum).localeCompare(datumSleutel(b.datum)) || tijdSleutel(a.tijd) - tijdSleutel(b.tijd);
+    Object.values(per).forEach(l => l.sort(opTijd));
+    const eerste = per.kf.length ? 0 : per.hf.length ? 1 : 2;
+    const rondes = RONDES.slice(eerste);
+    // Van achter naar voren plaatsen: finale, dan de halve finales die erop aansluiten, enz.
+    const kolommen = {};
+    kolommen.f = plaats(per.f, 1, null);
+    if (eerste <= 1) kolommen.hf = plaats(per.hf, 2, kolommen.f);
+    if (eerste === 0) kolommen.kf = plaats(per.kf, 4, kolommen.hf);
+    // Lege vakken na de eerste ronde: "nog te bepalen", met de winnaars die al bekend zijn
+    rondes.forEach((r, ri) => {
+      if (ri === 0) return;
+      const vorige = kolommen[rondes[ri - 1].code];
+      kolommen[r.code] = kolommen[r.code].map((w, i) => w
+        // Ingeplande wedstrijd waarvan een speler nog leeg is: alvast de winnaar uit de vorige ronde
+        ? { ...w, speler1: w.speler1 || winnaarVan(vorige[2 * i]), speler2: w.speler2 || winnaarVan(vorige[2 * i + 1]) }
+        : { open: true, ronde: r.naam, speler1: winnaarVan(vorige[2 * i]), speler2: winnaarVan(vorige[2 * i + 1]) });
+    });
+    schemas.push({ ond, rondes, kolommen, vakken: rondes[0].vakken });
+  }
+  return schemas.sort((a, b) => a.ond.localeCompare(b.ond, "nl"));
+}
+
+// Verdeel de schema's over pagina's: een groot schema alleen, kleinere samen
+// (elk schema op de eerste pagina waar het nog bij past, zodat er geen halflege pagina's zijn)
+function maakPaginas(schemas) {
+  const res = [];
+  for (const s of schemas) {
+    const p = res.find(p => p.reduce((t, x) => t + x.vakken, 0) + s.vakken <= RUIMTE_PER_PAGINA);
+    if (p) p.push(s); else res.push([s]);
+  }
+  return res;
+}
+
+function teamsHTML(w, finale) {
+  const win = w.winnaar === "1" ? 1 : w.winnaar === "2" ? 2 : 0;
+  const cls = n => win ? (win === n ? "winnaar" : "verliezer") : "";
+  const s = sets(w.uitslag);
+  const regel = (n, naam) => {
+    const leeg = !naam;
+    const toon = leeg ? "nog te bepalen" : (naam.replace(/^Groep (\w+) #(\d+)$/, "Nr. $2 groep $1"));
+    return `<div class="naam ${cls(n)}${leeg ? " leeg" : ""}" style="grid-row:${n}">${finale && win === n ? "🏆 " : ""}${esc(toon)}</div>` +
+      (s || []).map(([a, b], i) => {
+        const eigen = n === 1 ? a : b, ander = n === 1 ? b : a;
+        return `<div class="set${eigen > ander ? " won" : ""}" style="grid-row:${n};grid-column:${i + 2}">${eigen}</div>`;
+      }).join("");
+  };
+  const tekst = !w.open && uitslagTekst(w) ? `<div class="tekst">${esc(uitslagTekst(w))}</div>` : "";
+  return `<div class="teams">${regel(1, w.speler1)}${regel(2, w.speler2)}${tekst}</div>`;
+}
+
+function kaartHTML(w, finale) {
+  if (w.open) return `<div class="kaart open${finale ? " finale" : ""}">
+    <div class="kmeta">${finale ? "🏆 Finale" : esc(w.ronde)} · nog niet ingepland</div>${teamsHTML(w, finale)}</div>`;
+  const kampioen = finale && w.status === "gespeeld" && w.winnaar;
+  const pil = w.status === "bezig" ? `<span class="pil">Bezig</span>` : kampioen ? `<span class="pil kampioen">Kampioen</span>` : "";
+  const meta = [dagNaam(w.datum), w.tijd ? `<b>${esc(w.tijd)}</b>` : "", w.baan ? `Baan ${esc(w.baan)}` : ""].filter(Boolean);
+  return `<div class="kaart ${w.status}${finale ? " finale" : ""}">
+    <div class="kmeta">${meta.join("<span>·</span>")}${pil}</div>${teamsHTML(w, finale)}</div>`;
+}
+
+function schemaHTML(s) {
+  const n = s.rondes.length;
+  const kolommen = s.rondes.map((r, ri) => {
+    const lijst = s.kolommen[r.code];
+    const laatste = ri === n - 1;
+    const slots = lijst.map((w, i) => {
+      const kl = ["slot"];
+      if (w && !laatste) kl.push("met-lijn", lijst.length === 1 ? "los" : i % 2 ? "onder" : "boven");
+      if (w && ri > 0) kl.push("van-links");
+      return `<div class="${kl.join(" ")}">${w ? kaartHTML(w, r.code === "f") : ""}</div>`;
+    }).join("");
+    return `<div class="ronde ${r.code}"><div class="rkop">${r.naam}</div><div class="slots">${slots}</div></div>`;
+  }).join("");
+  // De finale iets smaller dan de voorrondes als er drie rondes zijn
+  const breedtes = n === 3 ? "1fr 1fr 1fr" : n === 2 ? "1fr 1fr" : "minmax(0, 40vw)";
+  return `<section class="band" style="flex:${s.vakken}">
+    <div class="bandkop"><h2>${esc(s.ond)}</h2><span>${esc(omschrijving(s.ond))}</span></div>
+    <div class="schema${n === 3 ? " drie" : ""}" style="grid-template-columns:${breedtes}">${kolommen}</div>
+  </section>`;
+}
+
+function toon(nieuwePagina = false) {
+  const main = document.getElementById("main");
+  const voortgang = document.getElementById("voortgang");
+  if (!paginas.length) {
+    main.innerHTML = `<div class="leeg-scherm">${fout ? "Wedstrijden konden niet geladen worden." : "Nog geen kwartfinales, halve finales of finales."}</div>`;
+    document.getElementById("pagina").textContent = "";
+    voortgang.hidden = true;
+    return;
+  }
+  pagina = ((pagina % paginas.length) + paginas.length) % paginas.length;
+  main.className = nieuwePagina ? "fade" : "";
+  if (nieuwePagina) void main.offsetWidth;   // animatie opnieuw starten
+  main.innerHTML = paginas[pagina].map(schemaHTML).join("");
+  document.getElementById("pagina").textContent = paginas.length > 1 ? `Pagina ${pagina + 1} / ${paginas.length}` : "";
+  voortgang.hidden = paginas.length < 2;
+  if (nieuwePagina && paginas.length > 1) {
+    const balk = document.getElementById("balk");
+    balk.style.transition = "none"; balk.style.width = "0";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      balk.style.transition = `width ${SEC}s linear`; balk.style.width = "100%";
+    }));
+  }
+}
+
+// Demo: verzonnen uitslagen, zodat je ziet hoe het schema er tijdens het finaleweekend uitziet
+function demo(schemas) {
+  let teller = 0;
+  const uitslagen = ["6-4 6-3", "7-5 3-6 10-8", "6-2 7-6", "4-6 6-3 10-6"];
+  schemas.forEach((s, si) => s.rondes.forEach((r, ri) => {
+    const vorige = ri ? s.kolommen[s.rondes[ri - 1].code] : [];
+    s.kolommen[r.code] = s.kolommen[r.code].map((w, i) => {
+      if (!w) return w;
+      w = { ...w, speler1: w.speler1 || winnaarVan(vorige[2 * i]), speler2: w.speler2 || winnaarVan(vorige[2 * i + 1]) };
+      if (w.uitslag || w.winnaar || !w.speler1 || !w.speler2) return w;
+      if (r.code === "f") return { ...w, open: false, datum: "15-11-2026", tijd: `${10 + si % 6}:00`, baan: String(1 + si % 4),
+        ...(si % 3 === 0 ? { status: "bezig" } : si % 3 === 1
+          ? { status: "gespeeld", uitslag: "6-3 4-6 10-7", winnaar: "1" } : { status: "gepland" }) };
+      teller++;
+      if (teller % 6 === 0) return { ...w, open: false, status: "bezig", baan: String(1 + teller % 4) };
+      return { ...w, open: false, status: "gespeeld", uitslag: uitslagen[teller % 4], winnaar: teller % 3 ? "1" : "2" };
+    });
+  }));
+  return schemas;
+}
+
+async function laad() {
+  const status = document.getElementById("bijgewerkt");
+  try {
+    const { wedstrijden, bijgewerkt } = await laadWedstrijden(CSV_URL);
+    const schemas = bouwSchemas(wedstrijden);
+    paginas = maakPaginas(DEMO ? demo(schemas) : schemas);
+    fout = false;
+    laatsteOk = bijgewerkt;
+    status.className = "";
+    status.textContent = (DEMO ? "DEMO · " : "") + (bijgewerkt ? `Uitslagen bijgewerkt ${bijgewerkt}` : "");
+  } catch (e) {
+    fout = true;
+    status.className = "fout";
+    status.textContent = `Bijwerken mislukt${laatsteOk ? ` – stand van ${laatsteOk}` : ""}`;
+  }
+  toon();
+}
+
+function klok() {
+  document.getElementById("klok").textContent =
+    new Date().toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+}
+
+klok(); setInterval(klok, 10000);
+laad().then(() => toon(true));
+setInterval(laad, VERVERS_SECONDEN * 1000);
+setTimeout(() => location.reload(), 60 * 60 * 1000);   // elk uur herladen: nieuwe versie komt vanzelf
+setInterval(() => { pagina++; toon(true); }, SEC * 1000);
+addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") { pagina++; toon(true); }
+  if (e.key === "ArrowLeft") { pagina--; toon(true); }
+});
+
+// Schermvullend (zie scherm.html): melding verdwijnt na een klik of 10 seconden; ?knop=nee = nooit
+const volHint = document.getElementById("volHint");
+let hintWeg = params.get("knop") === "nee";
+const isVol = () => document.fullscreenElement || innerHeight >= screen.height - 2;
+const werkHintBij = () => { volHint.hidden = !!(hintWeg || isVol() || !document.documentElement.requestFullscreen); };
+const maakVol = () => {
+  hintWeg = true; werkHintBij();
+  if (!isVol()) document.documentElement.requestFullscreen?.().catch(() => {});
+};
+setTimeout(() => { hintWeg = true; werkHintBij(); }, 10000);
+addEventListener("click", maakVol);
+addEventListener("keydown", maakVol);
+addEventListener("resize", werkHintBij);
+document.addEventListener("fullscreenchange", werkHintBij);
+werkHintBij();
+</script>
+</body>
+</html>
